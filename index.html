@@ -367,6 +367,7 @@
       <div class="hero-icon">🗂️</div>
       <h1>Vokabeltrainer</h1>
       <p>DE · ES · FR · EN</p>
+      <p style="margin-top:4px;font-size:12px;color:var(--text-dim);">Angemeldet als <span id="homeUserName"></span></p>
     </div>
     <button class="menu-btn" onclick="go('view-learn-setup')">
       <span class="ic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
@@ -470,6 +471,11 @@
       <div class="backbtn" onclick="go('view-home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></div>
       <h1>Einstellungen</h1>
       <div class="spacer"></div>
+    </div>
+    <div class="section-label">Benutzer</div>
+    <div class="card-box" style="padding:18px;margin-bottom:22px;">
+      <div id="userSwitchContainer" style="display:flex;gap:8px;"></div>
+      <div style="font-size:12px;color:var(--text-dim);line-height:1.5;margin-top:10px;">Zeigt nur deine eigenen Lernsets an. Neue Lernsets werden automatisch dir zugeteilt.</div>
     </div>
     <div class="section-label">Synchronisierung</div>
     <div class="card-box" style="padding:18px;">
@@ -710,6 +716,13 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="userPickerOverlay" style="z-index:1300;">
+  <div class="modal-box">
+    <p style="margin-bottom:16px;font-weight:700;font-size:16px;">Wer bist du?</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="userPickerButtons"></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <div class="modal-overlay" id="modalOverlay">
@@ -732,6 +745,14 @@
     <div class="col">
       <div class="tag"><span id="cardEditFlagTgt"></span> <span id="cardEditLangTgt"></span></div>
       <input type="text" id="cardEditTarget">
+    </div>
+    <div class="col">
+      <div class="tag">Beispielsatz <span id="cardEditFlagSrc2"></span> (optional)</div>
+      <input type="text" id="cardEditExampleSource" placeholder="z. B. Der Tisch ist neu.">
+    </div>
+    <div class="col">
+      <div class="tag">Beispielsatz <span id="cardEditFlagTgt2"></span> (optional)</div>
+      <input type="text" id="cardEditExampleTarget" placeholder="z. B. La mesa es nueva.">
     </div>
     <div class="edit-overlay-actions">
       <div class="row">
@@ -792,6 +813,50 @@ const LANGS = {
 };
 const LANG_KEYS = Object.keys(LANGS);
 
+/* ============ USERS ============ */
+const USERS = ['Paulina', 'Felix', 'Heizel'];
+const CURRENT_USER_LS_KEY = "vokabeltrainer_current_user";
+let currentUser = null;
+
+function loadCurrentUser(){
+  try{ currentUser = localStorage.getItem(CURRENT_USER_LS_KEY) || null; }catch(e){ currentUser = null; }
+}
+
+function setCurrentUser(name){
+  currentUser = name;
+  try{ localStorage.setItem(CURRENT_USER_LS_KEY, name); }catch(e){}
+  document.getElementById('userPickerOverlay').classList.remove('show');
+  currentSetId = null;
+  renderUserUI();
+}
+window.setCurrentUser = setCurrentUser;
+
+function renderUserUI(){
+  const btnBox = document.getElementById('userPickerButtons');
+  if(btnBox){
+    btnBox.innerHTML = USERS.map(u=>`<button class="pill" style="width:100%;padding:14px;" onclick="setCurrentUser('${u}')">${u}</button>`).join('');
+  }
+  const switchBox = document.getElementById('userSwitchContainer');
+  if(switchBox){
+    switchBox.innerHTML = USERS.map(u=>`<button class="pill ${u===currentUser?'active':''}" style="flex:1;" onclick="setCurrentUser('${u}')">${u}</button>`).join('');
+  }
+  const nameEl = document.getElementById('homeUserName');
+  if(nameEl) nameEl.textContent = currentUser || '–';
+  render();
+}
+
+function getUserSets(){
+  return appData.learnSets.filter(s => s.owner === currentUser);
+}
+
+function migrateOwners(){
+  let changed = false;
+  appData.learnSets.forEach(s=>{
+    if(!s.owner){ s.owner = 'Felix'; changed = true; }
+  });
+  return changed;
+}
+
 /* ============ STATE ============ */
 let appData = { learnSets: [], deletedSets: [], lastUsedSetId: null };
 let currentSetId = null;
@@ -851,6 +916,7 @@ function loadLocal(){
   if(!appData.learnSets) appData.learnSets = [];
   if(appData.lastUsedSetId === undefined) appData.lastUsedSetId = null;
   purgeExpiredDeletedSets();
+  if(migrateOwners()) saveLocal();
 }
 function saveLocal(){
   try{ localStorage.setItem(LS_KEY, JSON.stringify(appData)); }catch(e){}
@@ -895,8 +961,7 @@ async function initFirebaseSync(){
         appData.deletedSets = Array.isArray(remote.deletedSets) ? remote.deletedSets : [];
         appData.lastUsedSetId = remote.lastUsedSetId || null;
         purgeExpiredDeletedSets();
-        saveLocal();
-        render();
+        if(migrateOwners()){ persist(); } else { saveLocal(); render(); }
       }
     }
     setSyncStatus('ok');
@@ -986,16 +1051,17 @@ window.openEdit = openEdit;
 
 function renderEditLangFilter(){
   const container = document.getElementById('editLangFilterContainer');
-  const targets = [...new Set(appData.learnSets.map(s=>s.target))];
+  const sets = getUserSets();
+  const targets = [...new Set(sets.map(s=>s.target))];
   if(targets.length <= 1){
     container.innerHTML = '';
     if(editLangFilter !== 'alle') editLangFilter = 'alle';
     return;
   }
-  const allCount = appData.learnSets.length;
+  const allCount = sets.length;
   const pills = [`<div class="lang-filter-pill ${editLangFilter==='alle'?'active':''}" onclick="selectEditLangFilter('alle')">🌐<span class="fcount">${allCount}</span></div>`];
   targets.forEach(t=>{
-    const count = appData.learnSets.filter(s=>s.target===t).length;
+    const count = sets.filter(s=>s.target===t).length;
     pills.push(`<div class="lang-filter-pill ${editLangFilter===t?'active':''}" onclick="selectEditLangFilter('${t}')">${LANGS[t].flag}<span class="fcount">${count}</span></div>`);
   });
   container.innerHTML = `<div class="lang-filter-row">${pills.join('')}</div>`;
@@ -1010,8 +1076,9 @@ window.selectEditLangFilter = selectEditLangFilter;
 function renderSetList(){
   renderEditLangFilter();
   const c = document.getElementById('setListContainer');
-  const visible = editLangFilter==='alle' ? appData.learnSets : appData.learnSets.filter(s=>s.target===editLangFilter);
-  if(appData.learnSets.length===0){
+  const own = getUserSets();
+  const visible = editLangFilter==='alle' ? own : own.filter(s=>s.target===editLangFilter);
+  if(own.length===0){
     c.innerHTML = `<div class="empty"><div class="ic">📭</div><p>Noch keine Lernsets</p><p>Erstelle dein erstes Lernset, um Wörter zu sammeln.</p></div>`;
     return;
   }
@@ -1064,7 +1131,7 @@ function createSet(){
   const name = document.getElementById('newSetName').value.trim();
   if(!name){ showToast("Bitte einen Namen eingeben"); return; }
   if(newSetSource === newSetTarget){ showToast("Ausgangs- und Zielsprache müssen sich unterscheiden"); return; }
-  const set = { id: uid(), name, source: newSetSource, target: newSetTarget, cards: [] };
+  const set = { id: uid(), name, source: newSetSource, target: newSetTarget, cards: [], owner: currentUser };
   appData.learnSets.push(set);
   persist();
   openSetDetail(set.id);
@@ -1262,6 +1329,7 @@ function duplicateSet(){
     name: s.name + ' (Kopie)',
     source: s.source,
     target: s.target,
+    owner: s.owner,
     cards: s.cards.map(c => ({ id: uid(), source: c.source, target: c.target, difficulty: c.difficulty || 'neu' }))
   };
   appData.learnSets.push(copy);
@@ -1274,7 +1342,7 @@ window.duplicateSet = duplicateSet;
 /* ============ DUPLIKATE SUCHEN ============ */
 function findDuplicateGroups(){
   const groups = {};
-  appData.learnSets.forEach(s=>{
+  getUserSets().forEach(s=>{
     s.cards.forEach(c=>{
       const norm = c.source.trim().toLowerCase();
       const key = `${s.source}|${s.target}|${norm}`;
@@ -1330,7 +1398,7 @@ let spellCheckResults = [];
 
 function buildLanguageGroups(){
   const groups = { DE:[], ES:[], FR:[], EN:[] };
-  appData.learnSets.forEach(s=>{
+  getUserSets().forEach(s=>{
     s.cards.forEach(c=>{
       if(c.source && c.source.trim()) groups[s.source].push({ setId:s.id, setName:s.name, cardId:c.id, field:'source', text:c.source });
       if(c.target && c.target.trim()) groups[s.target].push({ setId:s.id, setName:s.name, cardId:c.id, field:'target', text:c.target });
@@ -1673,8 +1741,8 @@ window.autoTranslate = autoTranslate;
 
 /* ============ SETTINGS ============ */
 function confirmReset(){
-  showConfirm("Wirklich alle Lernsets unwiderruflich löschen?", ()=>{
-    appData.learnSets = [];
+  showConfirm("Wirklich alle deine Lernsets unwiderruflich löschen?", ()=>{
+    appData.learnSets = appData.learnSets.filter(s=>s.owner!==currentUser);
     persist();
     showToast("Alle Lernsets gelöscht");
   });
@@ -1683,11 +1751,13 @@ window.confirmReset = confirmReset;
 
 /* ============ LEARN SETUP ============ */
 function openLearnSetup(){
-  if(appData.learnSets.length===0){
+  const own = getUserSets();
+  const active = getSet(currentSetId);
+  if(own.length===0){
     currentSetId = null;
-  } else if(!getSet(currentSetId)){
+  } else if(!active || active.owner !== currentUser){
     const lastUsed = appData.lastUsedSetId && getSet(appData.lastUsedSetId);
-    currentSetId = lastUsed ? appData.lastUsedSetId : appData.learnSets[0].id;
+    currentSetId = (lastUsed && lastUsed.owner===currentUser) ? appData.lastUsedSetId : own[0].id;
   }
   currentCategory = "alle";
   currentMode = null;
@@ -1706,22 +1776,24 @@ function selectSet(id){
 window.selectSet = selectSet;
 
 function getVisibleLearnSets(){
-  if(setLangFilter === 'alle') return appData.learnSets;
-  return appData.learnSets.filter(s => s.target === setLangFilter);
+  const own = getUserSets();
+  if(setLangFilter === 'alle') return own;
+  return own.filter(s => s.target === setLangFilter);
 }
 
 function renderSetLangFilter(){
   const container = document.getElementById('setLangFilterContainer');
-  const targets = [...new Set(appData.learnSets.map(s=>s.target))];
+  const sets = getUserSets();
+  const targets = [...new Set(sets.map(s=>s.target))];
   if(targets.length <= 1){
     container.innerHTML = '';
     if(setLangFilter !== 'alle') setLangFilter = 'alle';
     return;
   }
-  const allCount = appData.learnSets.length;
+  const allCount = sets.length;
   const pills = [`<div class="lang-filter-pill ${setLangFilter==='alle'?'active':''}" onclick="selectLangFilter('alle')">🌐<span class="fcount">${allCount}</span></div>`];
   targets.forEach(t=>{
-    const count = appData.learnSets.filter(s=>s.target===t).length;
+    const count = sets.filter(s=>s.target===t).length;
     pills.push(`<div class="lang-filter-pill ${setLangFilter===t?'active':''}" onclick="selectLangFilter('${t}')">${LANGS[t].flag}<span class="fcount">${count}</span></div>`);
   });
   container.innerHTML = `<div class="lang-filter-row">${pills.join('')}</div>`;
@@ -2044,8 +2116,12 @@ function openCardEditor(){
   document.getElementById('cardEditLangSrc').textContent = LANGS[s.source].name;
   document.getElementById('cardEditFlagTgt').textContent = LANGS[s.target].flag;
   document.getElementById('cardEditLangTgt').textContent = LANGS[s.target].name;
+  document.getElementById('cardEditFlagSrc2').textContent = LANGS[s.source].flag;
+  document.getElementById('cardEditFlagTgt2').textContent = LANGS[s.target].flag;
   document.getElementById('cardEditSource').value = card.source;
   document.getElementById('cardEditTarget').value = card.target;
+  document.getElementById('cardEditExampleSource').value = card.exampleSource || '';
+  document.getElementById('cardEditExampleTarget').value = card.exampleTarget || '';
   document.getElementById('cardEditOverlay').classList.add('show');
 }
 window.openCardEditor = openCardEditor;
@@ -2060,9 +2136,13 @@ function saveCardEditFromSession(){
   if(!card) return;
   const src = document.getElementById('cardEditSource').value.trim();
   const tgt = document.getElementById('cardEditTarget').value.trim();
+  const exSrc = document.getElementById('cardEditExampleSource').value.trim();
+  const exTgt = document.getElementById('cardEditExampleTarget').value.trim();
   if(!src || !tgt){ showToast("Bitte beide Wörter ausfüllen"); return; }
   card.source = src;
   card.target = tgt;
+  card.exampleSource = exSrc;
+  card.exampleTarget = exTgt;
   persist();
   closeCardEditor();
   renderSessionCard();
@@ -2215,8 +2295,10 @@ function go(id){
 window.go = go;
 
 loadLocal();
+loadCurrentUser();
 loadSpeechSettings();
-render();
+renderUserUI();
+if(!currentUser){ document.getElementById('userPickerOverlay').classList.add('show'); }
 initFirebaseSync();
 </script>
 </body>
