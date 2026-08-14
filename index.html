@@ -175,6 +175,7 @@
   .card-list-item .words{flex:1;min-width:0;}
   .card-list-item .w1{font-size:15px;font-weight:700;}
   .card-list-item .w2{font-size:13px;color:var(--text-dim);margin-top:2px;}
+  .w-example{font-size:12px;color:var(--text-dim);font-style:italic;opacity:.75;margin-top:2px;}
   .diff-badge{font-size:10px;font-weight:800;text-transform:uppercase;padding:4px 8px;border-radius:8px;flex-shrink:0;
     cursor:pointer;min-width:52px;text-align:center;}
   .diff-badge.leicht{background:rgba(48,209,88,.16);color:var(--green);}
@@ -207,6 +208,12 @@
   .flashcard .card-edit-btn svg{width:14px;height:14px;}
   .flashcard .word{font-size:30px;font-weight:800;line-height:1.25;word-break:break-word;}
   .flashcard .sub{font-size:13px;color:var(--text-dim);margin-top:10px;letter-spacing:.3px;}
+  .flashcard .card-example{display:flex;align-items:center;gap:8px;margin-top:16px;padding:10px 14px;
+    background:rgba(255,255,255,.04);border-radius:12px;max-width:100%;}
+  .flashcard .card-example span#cardExampleText{font-size:14px;color:var(--text-dim);font-style:italic;line-height:1.4;}
+  .example-speak-btn{width:26px;height:26px;border-radius:50%;background:var(--panel-2);border:1px solid var(--green-dim);
+    color:var(--green);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+  .example-speak-btn svg{width:12px;height:12px;}
   .flashcard .tapinfo{position:absolute;bottom:16px;font-size:11px;color:var(--text-dim);}
   .flashcard.flipped .word{color:var(--green);}
 
@@ -435,6 +442,16 @@
           <input type="text" id="inputTarget" placeholder="Übersetzung">
         </div>
       </div>
+      <div class="word-inputs">
+        <div class="col">
+          <div class="tag">Beispielsatz (optional)</div>
+          <input type="text" id="inputExampleSource" placeholder="z. B. Der Tisch ist neu.">
+        </div>
+        <div class="col">
+          <div class="tag">Beispielsatz (optional)</div>
+          <input type="text" id="inputExampleTarget" placeholder="z. B. La mesa es nueva.">
+        </div>
+      </div>
       <button class="translate-btn" id="translateBtn" onclick="autoTranslate()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h9M9 5v3M13 8c-1 5-4 8-7 9M9 12c1.5 2 3.5 3.5 6 4M17 21l3.5-9L24 21M17.8 18.5h5.4"/></svg>
         Automatisch übersetzen
@@ -569,6 +586,10 @@
         <div class="card-edit-btn" onclick="event.stopPropagation(); openCardEditor()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></div>
         <div class="word" id="cardWord">Wort</div>
         <div class="sub" id="cardSub"></div>
+        <div class="card-example hidden" id="cardExample" onclick="event.stopPropagation();">
+          <span id="cardExampleText"></span>
+          <span class="example-speak-btn hidden" id="cardExampleSpeakBtn" onclick="speakExample()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg></span>
+        </div>
         <span class="tapinfo" id="tapInfo">Tippen, um Lösung zu zeigen</span>
       </div>
     </div>
@@ -670,8 +691,8 @@
 <div class="modal-overlay" id="csvImportOverlay">
   <div class="csv-overlay-box">
     <h3>CSV aus Text einfügen</h3>
-    <div class="hint-text">Eine Zeile pro Wortpaar, Ausgangs- und Zielsprache getrennt durch Komma, Semikolon oder Tab (z. B. aus Excel kopiert).</div>
-    <textarea id="csvImportText" placeholder="Hund, el perro&#10;Katze, el gato"></textarea>
+    <div class="hint-text">Eine Zeile pro Wort: Ausgangssprache, Zielsprache, optional Beispielsatz Ausgangssprache, optional Beispielsatz Zielsprache – getrennt durch Komma, Semikolon oder Tab (z. B. aus Excel kopiert). Die letzten beiden Spalten können weggelassen werden.</div>
+    <textarea id="csvImportText" placeholder="Hund, el perro&#10;Katze, el gato, Die Katze schläft., El gato duerme."></textarea>
     <div class="overlay-actions-row">
       <button onclick="closeCsvImport()">Abbrechen</button>
       <button class="primary" onclick="processCsvImport()">Wörter importieren</button>
@@ -1062,6 +1083,8 @@ function openSetDetail(id){
   document.getElementById('detailLangTgt').textContent = LANGS[s.target].name;
   document.getElementById('inputSource').value = "";
   document.getElementById('inputTarget').value = "";
+  document.getElementById('inputExampleSource').value = "";
+  document.getElementById('inputExampleTarget').value = "";
   editingCardId = null;
   document.getElementById('addOrUpdateBtn').textContent = 'Wort hinzufügen';
   document.getElementById('cancelEditBtn').classList.add('hidden');
@@ -1110,7 +1133,7 @@ function exportSetCsv(){
   const s = getSet(currentSetId);
   if(!s) return;
   if(s.cards.length===0){ showToast("Keine Wörter zum Exportieren"); return; }
-  const lines = s.cards.map(c => `${csvEscape(c.source)},${csvEscape(c.target)}`);
+  const lines = s.cards.map(c => `${csvEscape(c.source)},${csvEscape(c.target)},${csvEscape(c.exampleSource||'')},${csvEscape(c.exampleTarget||'')}`);
   const csv = lines.join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
@@ -1153,6 +1176,29 @@ function detectDelimiter(line){
   return bestCount > 0 ? best : ',';
 }
 
+function parseCsvLine(line, delim){
+  const result = [];
+  let cur = '';
+  let inQuotes = false;
+  for(let i=0;i<line.length;i++){
+    const ch = line[i];
+    if(inQuotes){
+      if(ch === '"'){
+        if(line[i+1] === '"'){ cur += '"'; i++; }
+        else { inQuotes = false; }
+      } else {
+        cur += ch;
+      }
+    } else {
+      if(ch === '"'){ inQuotes = true; }
+      else if(ch === delim){ result.push(cur.trim()); cur = ''; }
+      else { cur += ch; }
+    }
+  }
+  result.push(cur.trim());
+  return result;
+}
+
 function looksLikeHeader(row, s){
   const headerWords = ['wort','übersetzung','translation','source','target','front','back','deutsch','spanisch','französisch','englisch','german','spanish','french','english'];
   const a = (row[0]||'').trim().toLowerCase();
@@ -1173,8 +1219,8 @@ function processCsvImport(){
   if(lines.length===0){ showToast("Keine Zeilen gefunden"); return; }
   const delim = detectDelimiter(lines[0]);
   const rows = lines.map(l=>{
-    const parts = l.split(delim).map(p=>p.trim().replace(/^"|"$/g,''));
-    return [parts[0]||'', parts[1]||''];
+    const parts = parseCsvLine(l, delim);
+    return [parts[0]||'', parts[1]||'', parts[2]||'', parts[3]||''];
   }).filter(r => r[0] && r[1]);
 
   if(rows.length===0){ showToast("Konnte keine Wortpaare erkennen"); return; }
@@ -1197,7 +1243,7 @@ function finishCsvImport(skipFirst){
   let rows = pendingCsvRows;
   if(skipFirst) rows = rows.slice(1);
   rows.forEach(r=>{
-    s.cards.push({ id: uid(), source: r[0], target: r[1], difficulty: 'neu' });
+    s.cards.push({ id: uid(), source: r[0], target: r[1], difficulty: 'neu', exampleSource: r[2]||'', exampleTarget: r[3]||'' });
   });
   pendingCsvRows = [];
   persist();
@@ -1410,8 +1456,10 @@ function renderCardList(){
   c.innerHTML = s.cards.slice().reverse().map(card=>{
     const diff = card.difficulty || 'neu';
     const diffBadge = `<span class="diff-badge ${diff}" onclick="cycleDifficulty('${card.id}')">${diff}</span>`;
+    const exSrc = card.exampleSource ? `<div class="w-example">${escapeHtml(card.exampleSource)}</div>` : '';
+    const exTgt = card.exampleTarget ? `<div class="w-example">${escapeHtml(card.exampleTarget)}</div>` : '';
     return `<div class="card-list-item">
-      <div class="words"><div class="w1">${escapeHtml(card.source)}</div><div class="w2">${escapeHtml(card.target)}</div></div>
+      <div class="words"><div class="w1">${escapeHtml(card.source)}</div>${exSrc}<div class="w2">${escapeHtml(card.target)}</div>${exTgt}</div>
       ${diffBadge}
       <div class="row-actions">
         <div class="edit-btn" onclick="editCard('${card.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></div>
@@ -1445,6 +1493,8 @@ function editCard(cardId){
   editingCardId = cardId;
   document.getElementById('inputSource').value = card.source;
   document.getElementById('inputTarget').value = card.target;
+  document.getElementById('inputExampleSource').value = card.exampleSource || '';
+  document.getElementById('inputExampleTarget').value = card.exampleTarget || '';
   document.getElementById('addOrUpdateBtn').textContent = 'Änderungen speichern';
   document.getElementById('cancelEditBtn').classList.remove('hidden');
   document.getElementById('inputSource').focus();
@@ -1455,6 +1505,8 @@ function cancelEditCard(){
   editingCardId = null;
   document.getElementById('inputSource').value = '';
   document.getElementById('inputTarget').value = '';
+  document.getElementById('inputExampleSource').value = '';
+  document.getElementById('inputExampleTarget').value = '';
   document.getElementById('addOrUpdateBtn').textContent = 'Wort hinzufügen';
   document.getElementById('cancelEditBtn').classList.add('hidden');
 }
@@ -1465,16 +1517,20 @@ function addCard(){
   if(!s) return;
   const src = document.getElementById('inputSource').value.trim();
   const tgt = document.getElementById('inputTarget').value.trim();
+  const exSrc = document.getElementById('inputExampleSource').value.trim();
+  const exTgt = document.getElementById('inputExampleTarget').value.trim();
   if(!src || !tgt){ showToast("Bitte beide Wörter erfassen"); return; }
 
   if(editingCardId){
     const card = s.cards.find(c=>c.id===editingCardId);
-    if(card){ card.source = src; card.target = tgt; }
+    if(card){ card.source = src; card.target = tgt; card.exampleSource = exSrc; card.exampleTarget = exTgt; }
     cancelEditCard();
   } else {
-    s.cards.push({ id: uid(), source: src, target: tgt, difficulty: 'neu' });
+    s.cards.push({ id: uid(), source: src, target: tgt, difficulty: 'neu', exampleSource: exSrc, exampleTarget: exTgt });
     document.getElementById('inputSource').value = "";
     document.getElementById('inputTarget').value = "";
+    document.getElementById('inputExampleSource').value = "";
+    document.getElementById('inputExampleTarget').value = "";
   }
   persist();
   renderCardList();
@@ -1571,24 +1627,39 @@ function permanentlyDeleteSet(id){
 }
 window.permanentlyDeleteSet = permanentlyDeleteSet;
 
+async function translateText(text, pair){
+  const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${pair}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  return data?.responseData?.translatedText || null;
+}
+
 async function autoTranslate(){
   const s = getSet(currentSetId);
   if(!s) return;
   const src = document.getElementById('inputSource').value.trim();
   if(!src){ showToast("Bitte zuerst ein Wort eingeben"); return; }
+  const exampleSrc = document.getElementById('inputExampleSource').value.trim();
   const btn = document.getElementById('translateBtn');
   btn.classList.add('loading');
   btn.textContent = "Übersetze…";
   try{
     const pair = `${LANGS[s.source].mm}|${LANGS[s.target].mm}`;
-    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(src)}&langpair=${pair}`;
-    const res = await fetch(url);
-    const data = await res.json();
-    const translated = data?.responseData?.translatedText;
-    if(translated){
-      document.getElementById('inputTarget').value = translated;
+    const tasks = [translateText(src, pair)];
+    if(exampleSrc) tasks.push(translateText(exampleSrc, pair));
+    const [translatedWord, translatedExample] = await Promise.all(tasks);
+
+    if(translatedWord){
+      document.getElementById('inputTarget').value = translatedWord;
     }else{
-      showToast("Keine Übersetzung gefunden");
+      showToast("Keine Übersetzung für das Wort gefunden");
+    }
+    if(exampleSrc){
+      if(translatedExample){
+        document.getElementById('inputExampleTarget').value = translatedExample;
+      }else{
+        showToast("Beispielsatz konnte nicht übersetzt werden");
+      }
     }
   }catch(e){
     console.error(e);
@@ -1819,12 +1890,16 @@ function renderSessionCard(){
   const backLang = fwd ? set.target : set.source;
   const frontWord = fwd ? card.source : card.target;
   const backWord = fwd ? card.target : card.source;
+  const frontExample = fwd ? card.exampleSource : card.exampleTarget;
+  const backExample = fwd ? card.exampleTarget : card.exampleSource;
 
   session.flipped = false;
   session._frontWord = frontWord;
   session._backWord = backWord;
   session._frontLangKey = frontLang;
   session._backLangKey = backLang;
+  session._frontExample = frontExample || '';
+  session._backExample = backExample || '';
 
   document.getElementById('sessCount').textContent = `${index+1} / ${cards.length}`;
   document.getElementById('progressFill').style.width = `${(index/cards.length)*100}%`;
@@ -1833,6 +1908,7 @@ function renderSessionCard(){
   document.getElementById('cardSub').textContent = "";
   document.getElementById('tapInfo').textContent = "Tippen, um Lösung zu zeigen";
   document.getElementById('flashcard').classList.remove('flipped');
+  updateCardExampleDisplay(session._frontExample);
   document.getElementById('diffRow').style.visibility = 'hidden';
   document.getElementById('rfFalseBtn').classList.add('hidden');
   document.getElementById('rfTrueBtn').classList.add('hidden');
@@ -1856,6 +1932,7 @@ function flipCard(){
   document.getElementById('cardSub').textContent = `${session._frontWord}`;
   document.getElementById('tapInfo').textContent = "";
   document.getElementById('flashcard').classList.add('flipped');
+  updateCardExampleDisplay(session._backExample);
   if(session.mode==='rf'){
     document.getElementById('rfFalseBtn').classList.remove('hidden');
     document.getElementById('rfTrueBtn').classList.remove('hidden');
@@ -1865,6 +1942,34 @@ function flipCard(){
     document.getElementById('diffHint').textContent = "Wie gut kanntest du dieses Wort?";
   }
 }
+
+function updateCardExampleDisplay(example){
+  const box = document.getElementById('cardExample');
+  const textEl = document.getElementById('cardExampleText');
+  const speakBtn = document.getElementById('cardExampleSpeakBtn');
+  if(example && example.trim()){
+    box.classList.remove('hidden');
+    textEl.textContent = example;
+    speakBtn.classList.remove('hidden');
+  } else {
+    box.classList.add('hidden');
+    textEl.textContent = '';
+    speakBtn.classList.add('hidden');
+  }
+}
+
+function speakExample(){
+  if(!('speechSynthesis' in window)) { showToast("Sprachausgabe nicht verfügbar"); return; }
+  const text = session.flipped ? session._backExample : session._frontExample;
+  const langKey = session.flipped ? session._backLangKey : session._frontLangKey;
+  if(!text) return;
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = getSpeechLangCode(langKey);
+  utter.rate = speechSettings.rate;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utter);
+}
+window.speakExample = speakExample;
 window.flipCard = flipCard;
 
 function rateCard(level){
