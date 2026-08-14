@@ -1,0 +1,2118 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Vokabeltrainer</title>
+<style>
+  :root{
+    --bg:#000000;
+    --panel:#161618;
+    --panel-2:#1e1e21;
+    --border:#2c2c30;
+    --text:#f2f2f4;
+    --text-dim:#9a9aa1;
+    --green:#30d158;
+    --green-dim:#1f8a3c;
+    --red:#ff4d4f;
+    --amber:#ffb020;
+    --radius-lg:20px;
+    --radius-md:14px;
+    --safe-top:env(safe-area-inset-top);
+    --safe-bottom:env(safe-area-inset-bottom);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-serif;
+    height:100%;overscroll-behavior:none;}
+  body{padding-top:var(--safe-top);padding-bottom:var(--safe-bottom);}
+  button{font-family:inherit;}
+  .app{max-width:900px;margin:0 auto;padding:24px 24px 40px;min-height:100vh;}
+  .screen{display:none;animation:fade .18s ease;}
+  .screen.active{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+  /* top bar */
+  .topbar{display:flex;align-items:center;gap:12px;margin-bottom:28px;min-height:36px;}
+  .backbtn{width:36px;height:36px;border-radius:50%;background:var(--panel);border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer;flex-shrink:0;}
+  .backbtn svg{width:16px;height:16px;}
+  .topbar h1{font-size:20px;font-weight:700;margin:0;flex:1;text-align:center;}
+  .topbar .spacer{width:36px;flex-shrink:0;}
+
+  /* home */
+  .hero{text-align:center;margin:36px 0 40px;}
+  .hero-icon{width:88px;height:88px;margin:0 auto 18px;border-radius:26px;
+    background:linear-gradient(155deg,#34d95d,#1f8a3c);
+    display:flex;align-items:center;justify-content:center;font-size:40px;}
+  .hero h1{font-size:26px;font-weight:800;margin:0;letter-spacing:-0.4px;}
+  .hero p{color:var(--text-dim);margin:6px 0 0;font-size:14px;}
+
+  .menu-btn{width:100%;display:flex;align-items:center;gap:14px;background:var(--panel);
+    border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;margin-bottom:12px;
+    color:var(--text);font-size:17px;font-weight:600;cursor:pointer;text-align:left;}
+  .menu-btn .ic{width:30px;height:30px;border-radius:50%;background:var(--green);color:#00230d;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .menu-btn .ic svg{width:15px;height:15px;}
+  .menu-btn .chev{margin-left:auto;color:var(--text-dim);}
+  .menu-btn .chev svg{width:14px;height:14px;}
+
+  .sync-pill{display:flex;align-items:center;gap:8px;justify-content:center;font-size:12px;
+    color:var(--text-dim);margin-top:8px;}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;}
+  .dot.off{background:var(--text-dim);}
+  .dot.busy{background:var(--amber);}
+
+  /* generic section label */
+  .section-label{color:var(--text-dim);font-size:13px;font-weight:600;text-transform:uppercase;
+    letter-spacing:.4px;margin:0 0 10px 4px;}
+  .card-box{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg);
+    padding:6px;margin-bottom:26px;}
+
+  /* dropdown / select-like */
+  .select-pill{width:100%;background:var(--green);color:#00230d;border:none;border-radius:16px;
+    padding:16px 18px;font-size:17px;font-weight:700;display:flex;align-items:center;justify-content:space-between;
+    cursor:pointer;}
+  .select-pill svg{width:16px;height:16px;}
+
+  .select-native-wrap{position:relative;width:100%;}
+  .select-native-wrap select{width:100%;background:var(--green);color:#00230d;border:none;border-radius:16px;
+    padding:16px 44px 16px 18px;font-size:17px;font-weight:700;-webkit-appearance:none;appearance:none;
+    cursor:pointer;font-family:inherit;}
+  .select-native-wrap .chev-icon{position:absolute;right:18px;top:50%;transform:translateY(-50%);
+    pointer-events:none;color:#00230d;}
+  .select-native-wrap .chev-icon svg{width:16px;height:16px;}
+
+  .lang-filter-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+  .lang-filter-pill{padding:9px 14px;border-radius:12px;border:1px solid var(--border);background:var(--panel);
+    font-size:18px;cursor:pointer;display:flex;align-items:center;gap:6px;}
+  .lang-filter-pill.active{border-color:var(--green);background:rgba(48,209,88,.14);}
+  .lang-filter-pill .fcount{font-size:11px;color:var(--text-dim);font-weight:700;}
+  .lang-filter-pill.active .fcount{color:var(--green);}
+
+  .voice-select-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .voice-select-row label{font-size:14px;font-weight:600;}
+  .voice-select-row select{background:var(--panel-2);border:1px solid var(--border);border-radius:10px;
+    padding:8px 10px;color:var(--text);font-size:14px;font-family:inherit;}
+
+  /* pills row */
+  .pill-row{display:flex;gap:10px;flex-wrap:wrap;padding:14px;}
+  .pill{padding:10px 16px;border-radius:12px;border:1px solid var(--border);background:transparent;
+    color:var(--text);font-size:14px;font-weight:600;cursor:pointer;}
+  .pill.active{background:rgba(48,209,88,.16);border-color:var(--green-dim);color:var(--green);}
+  .pill:disabled{opacity:.35;}
+
+  /* mode list */
+  .mode-item{display:flex;align-items:center;gap:14px;padding:18px 18px;border-bottom:1px solid var(--border);
+    cursor:pointer;}
+  .mode-item:last-child{border-bottom:none;}
+  .mode-item .lbl{font-size:17px;font-weight:700;flex:1;}
+  .mode-item .lbl .flags{font-size:15px;font-weight:500;margin-left:6px;}
+  .mode-item .hint{font-size:11px;color:var(--text-dim);}
+  .mode-item.disabled{opacity:.35;pointer-events:none;}
+  .radio{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;}
+  .radio.checked{background:var(--green);border-color:var(--green);}
+  .radio.checked svg{width:13px;height:13px;color:#00230d;}
+
+  .btn-primary{width:100%;background:var(--green);color:#00230d;border:none;border-radius:18px;
+    padding:18px;font-size:17px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;
+    cursor:pointer;}
+  .btn-primary:disabled{opacity:.35;}
+  .btn-primary svg{width:16px;height:16px;}
+  .btn-secondary{width:100%;background:var(--panel-2);color:var(--text);border:1px solid var(--border);
+    border-radius:16px;padding:15px;font-size:15px;font-weight:700;cursor:pointer;}
+  .btn-ghost{background:none;border:none;color:var(--green);font-weight:700;font-size:15px;cursor:pointer;}
+  .btn-danger{color:var(--red);}
+
+  /* Bearbeiten: lernset list */
+  .set-card{display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--border);
+    border-radius:var(--radius-lg);padding:16px 18px;margin-bottom:12px;cursor:pointer;}
+  .set-flags{font-size:22px;flex-shrink:0;display:flex;align-items:center;gap:4px;}
+  .set-flags .arrow{color:var(--text-dim);font-size:13px;}
+  .set-info{flex:1;min-width:0;}
+  .set-info .name{font-size:16px;font-weight:700;}
+  .set-info .count{font-size:12px;color:var(--text-dim);margin-top:2px;}
+  .set-card .chev{color:var(--text-dim);flex-shrink:0;}
+  .set-card .chev svg{width:14px;height:14px;}
+
+  .empty{text-align:center;padding:60px 20px;color:var(--text-dim);}
+  .empty .ic{font-size:44px;margin-bottom:14px;}
+  .empty p{font-size:14px;margin:4px 0;}
+
+  /* language picker (flags grid) */
+  .lang-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .lang-opt{display:flex;align-items:center;gap:10px;padding:14px;border-radius:14px;border:1px solid var(--border);
+    background:var(--panel-2);cursor:pointer;font-size:15px;font-weight:600;}
+  .lang-opt .flag{font-size:22px;}
+  .lang-opt.active{border-color:var(--green);background:rgba(48,209,88,.14);color:var(--green);}
+
+  .field{margin-bottom:22px;}
+  .field label{display:block;color:var(--text-dim);font-size:13px;font-weight:600;margin-bottom:8px;}
+  .field input[type=text]{width:100%;background:var(--panel);border:1px solid var(--border);border-radius:14px;
+    padding:15px 16px;color:var(--text);font-size:16px;}
+  .field input[type=text]:focus{outline:none;border-color:var(--green);}
+
+  /* card word add row */
+  .word-row{display:flex;flex-direction:column;gap:10px;background:var(--panel);border:1px solid var(--border);
+    border-radius:var(--radius-lg);padding:16px;margin-bottom:22px;}
+  .word-inputs{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .word-inputs .col{display:flex;flex-direction:column;gap:6px;}
+  .word-inputs .col .tag{font-size:11px;color:var(--text-dim);display:flex;align-items:center;gap:5px;}
+  .word-inputs input{background:var(--panel-2);border:1px solid var(--border);border-radius:12px;
+    padding:12px 12px;color:var(--text);font-size:15px;width:100%;}
+  .word-inputs input:focus{outline:none;border-color:var(--green);}
+  .translate-btn{display:flex;align-items:center;justify-content:center;gap:8px;background:var(--panel-2);
+    border:1px solid var(--border);border-radius:12px;padding:10px;font-size:13px;font-weight:700;color:var(--green);
+    cursor:pointer;}
+  .translate-btn svg{width:14px;height:14px;}
+  .translate-btn.loading{opacity:.5;}
+
+  .card-list-item{display:flex;align-items:center;gap:12px;padding:14px 6px;border-bottom:1px solid var(--border);}
+  .card-list-item:last-child{border-bottom:none;}
+  .card-list-item .words{flex:1;min-width:0;}
+  .card-list-item .w1{font-size:15px;font-weight:700;}
+  .card-list-item .w2{font-size:13px;color:var(--text-dim);margin-top:2px;}
+  .diff-badge{font-size:10px;font-weight:800;text-transform:uppercase;padding:4px 8px;border-radius:8px;flex-shrink:0;
+    cursor:pointer;min-width:52px;text-align:center;}
+  .diff-badge.leicht{background:rgba(48,209,88,.16);color:var(--green);}
+  .diff-badge.mittel{background:rgba(255,176,32,.16);color:var(--amber);}
+  .diff-badge.schwer{background:rgba(255,77,79,.16);color:var(--red);}
+  .diff-badge.neu{background:var(--panel-2);color:var(--text-dim);}
+  .del-btn{width:28px;height:28px;border-radius:50%;background:var(--panel-2);border:1px solid var(--border);
+    color:var(--text-dim);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+  .del-btn svg{width:12px;height:12px;}
+  .del-btn.danger{color:var(--red);border-color:rgba(255,77,79,.35);}
+  .edit-btn{width:28px;height:28px;border-radius:50%;background:var(--panel-2);border:1px solid var(--border);
+    color:var(--green);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+  .edit-btn svg{width:12px;height:12px;}
+  .row-actions{display:flex;gap:8px;flex-shrink:0;}
+
+  /* learning session */
+  .session-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+  .progress-track{flex:1;height:5px;background:var(--panel);border-radius:4px;margin:0 14px;overflow:hidden;}
+  .progress-fill{height:100%;background:var(--green);border-radius:4px;transition:width .25s ease;}
+  .session-count{font-size:13px;color:var(--text-dim);font-weight:600;white-space:nowrap;}
+
+  .flashcard-wrap{perspective:1400px;margin:20px 0 26px;}
+  .flashcard{position:relative;min-height:280px;border-radius:26px;background:linear-gradient(160deg,#1a1a1d,#0f0f11);
+    border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:36px 24px;text-align:center;cursor:pointer;}
+  .flashcard .flagtag{position:absolute;top:16px;left:18px;font-size:20px;opacity:.85;}
+  .flashcard .card-edit-btn{position:absolute;top:14px;right:16px;width:32px;height:32px;border-radius:50%;
+    background:var(--panel-2);border:1px solid var(--border);color:var(--green);display:flex;align-items:center;
+    justify-content:center;cursor:pointer;}
+  .flashcard .card-edit-btn svg{width:14px;height:14px;}
+  .flashcard .word{font-size:30px;font-weight:800;line-height:1.25;word-break:break-word;}
+  .flashcard .sub{font-size:13px;color:var(--text-dim);margin-top:10px;letter-spacing:.3px;}
+  .flashcard .tapinfo{position:absolute;bottom:16px;font-size:11px;color:var(--text-dim);}
+  .flashcard.flipped .word{color:var(--green);}
+
+  .icon-row{display:flex;align-items:center;justify-content:center;gap:18px;margin-bottom:22px;}
+  .icon-btn{width:52px;height:52px;border-radius:50%;background:var(--panel);border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text);flex-shrink:0;}
+  .icon-btn svg{width:20px;height:20px;}
+  .icon-btn.speak{color:var(--green);border-color:var(--green-dim);}
+  .icon-btn.rf-false{color:var(--red);border-color:rgba(255,77,79,.4);}
+  .icon-btn.rf-true{color:var(--green);border-color:var(--green-dim);}
+  .icon-btn:disabled{opacity:.3;}
+
+  .diff-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:8px;}
+  .diff-row.rf-row{grid-template-columns:1fr 1fr;}
+  .diff-btn{padding:15px 6px;border-radius:14px;border:1px solid var(--border);background:var(--panel);
+    font-weight:700;font-size:14px;cursor:pointer;color:var(--text);}
+  .diff-btn.leicht{color:var(--green);}
+  .diff-btn.mittel{color:var(--amber);}
+  .diff-btn.schwer{color:var(--red);}
+  .diff-hint{text-align:center;color:var(--text-dim);font-size:12px;margin-bottom:18px;min-height:16px;}
+
+  /* multiple choice */
+  .mc-word{text-align:center;margin:26px 0 30px;}
+  .mc-word .flagtag{font-size:22px;margin-bottom:12px;}
+  .mc-word .word{font-size:28px;font-weight:800;}
+  .mc-options{display:flex;flex-direction:column;gap:12px;}
+  .mc-opt{padding:17px 18px;border-radius:16px;border:1px solid var(--border);background:var(--panel);
+    font-size:16px;font-weight:600;text-align:left;cursor:pointer;color:var(--text);}
+  .mc-opt.correct{background:rgba(48,209,88,.18);border-color:var(--green);color:var(--green);}
+  .mc-opt.wrong{background:rgba(255,77,79,.18);border-color:var(--red);color:var(--red);}
+  .mc-opt.wrong-option{border-color:rgba(255,77,79,.35);}
+  .mc-opt:disabled{opacity:1;}
+  .mc-opt .opt-sub{display:block;font-size:12px;font-weight:500;color:var(--text-dim);margin-top:4px;}
+
+  .mc-stats{display:flex;justify-content:center;gap:18px;font-size:13px;font-weight:700;margin:12px 0 20px;}
+  .mc-stats .ok{color:var(--green);}
+  .mc-stats .bad{color:var(--red);}
+
+  /* list mode */
+  .list-mode-item{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 4px;
+    border-bottom:1px solid var(--border);}
+  .list-mode-item:last-child{border-bottom:none;}
+  .list-mode-item .side{flex:1;font-size:15px;font-weight:600;}
+  .list-mode-item .side.target{color:var(--green);text-align:right;}
+  .list-mode-item .arrow{color:var(--text-dim);font-size:13px;flex-shrink:0;}
+
+  .done-wrap{text-align:center;padding:50px 20px;}
+  .done-wrap .ic{font-size:56px;margin-bottom:16px;}
+  .done-wrap h2{font-size:22px;margin:0 0 6px;}
+  .done-wrap p{color:var(--text-dim);font-size:14px;margin:0 0 30px;}
+
+  .toast{position:fixed;bottom:calc(28px + var(--safe-bottom));left:50%;transform:translateX(-50%) translateY(20px);
+    background:#1e1e21;border:1px solid var(--border);color:var(--text);padding:12px 20px;border-radius:14px;
+    font-size:13px;font-weight:600;opacity:0;transition:all .25s ease;pointer-events:none;z-index:999;
+    display:flex;align-items:center;gap:8px;box-shadow:0 8px 24px rgba(0,0,0,.4);}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  .hidden{display:none !important;}
+  ::selection{background:rgba(48,209,88,.3);}
+
+  /* custom confirm modal */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;
+    justify-content:center;z-index:1000;padding:24px;opacity:0;pointer-events:none;transition:opacity .18s ease;}
+  .modal-overlay.show{opacity:1;pointer-events:auto;}
+  #modalOverlay{z-index:1100;}
+  .modal-box{background:#1c1c1f;border:1px solid var(--border);border-radius:20px;padding:24px 22px;
+    max-width:340px;width:100%;text-align:center;transform:scale(.94);transition:transform .18s ease;}
+  .modal-overlay.show .modal-box{transform:scale(1);}
+  .modal-box p{font-size:15px;line-height:1.5;margin:0 0 20px;color:var(--text);}
+  .modal-actions{display:flex;gap:10px;}
+  .modal-actions button{flex:1;padding:13px;border-radius:14px;font-size:15px;font-weight:700;border:1px solid var(--border);
+    background:var(--panel-2);color:var(--text);cursor:pointer;}
+  .modal-actions .confirm-btn{background:var(--red);border-color:var(--red);color:#2a0000;}
+
+  .edit-overlay-box{background:#1c1c1f;border:1px solid var(--border);border-radius:20px;padding:22px;
+    max-width:380px;width:100%;transform:scale(.94);transition:transform .18s ease;}
+  .modal-overlay.show .edit-overlay-box{transform:scale(1);}
+  .edit-overlay-box h3{font-size:16px;margin:0 0 16px;text-align:center;}
+  .edit-overlay-box .col{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+  .edit-overlay-box .col .tag{font-size:11px;color:var(--text-dim);display:flex;align-items:center;gap:5px;}
+  .edit-overlay-box input{width:100%;background:var(--panel-2);border:1px solid var(--border);border-radius:12px;
+    padding:13px 14px;color:var(--text);font-size:16px;}
+  .edit-overlay-box input:focus{outline:none;border-color:var(--green);}
+  .edit-overlay-actions{display:flex;flex-direction:column;gap:10px;margin-top:8px;}
+  .edit-overlay-actions .row{display:flex;gap:10px;}
+  .edit-overlay-actions button{flex:1;padding:13px;border-radius:14px;font-size:15px;font-weight:700;
+    border:1px solid var(--border);background:var(--panel-2);color:var(--text);cursor:pointer;}
+  .edit-overlay-actions .save-btn{background:var(--green);border-color:var(--green);color:#00230d;}
+  .edit-overlay-actions .delete-btn{color:var(--red);border-color:rgba(255,77,79,.35);}
+
+  /* action menu (dropdown) */
+  .action-menu-wrap{position:fixed;inset:0;z-index:1050;display:none;}
+  .action-menu-wrap.show{display:block;}
+  .action-menu-backdrop{position:absolute;inset:0;}
+  .action-menu{position:absolute;top:calc(64px + var(--safe-top));right:24px;background:#1c1c1f;
+    border:1px solid var(--border);border-radius:18px;min-width:230px;overflow:hidden;
+    box-shadow:0 12px 30px rgba(0,0,0,.5);}
+  .action-menu-item{display:flex;align-items:center;gap:12px;padding:14px 16px;font-size:15px;font-weight:600;
+    color:var(--text);cursor:pointer;}
+  .action-menu-item svg{width:18px;height:18px;flex-shrink:0;color:var(--green);}
+  .action-menu-item.danger{color:var(--red);}
+  .action-menu-item.danger svg{color:var(--red);}
+  .action-menu-divider{height:1px;background:var(--border);margin:2px 0;}
+
+  .rename-overlay-box, .csv-overlay-box{background:#1c1c1f;border:1px solid var(--border);border-radius:20px;
+    padding:22px;max-width:400px;width:100%;}
+  .rename-overlay-box h3, .csv-overlay-box h3{font-size:16px;margin:0 0 16px;text-align:center;}
+  .rename-overlay-box input{width:100%;background:var(--panel-2);border:1px solid var(--border);border-radius:12px;
+    padding:13px 14px;color:var(--text);font-size:16px;margin-bottom:16px;}
+  .rename-overlay-box input:focus{outline:none;border-color:var(--green);}
+  .csv-overlay-box textarea{width:100%;min-height:160px;background:var(--panel-2);border:1px solid var(--border);
+    border-radius:12px;padding:13px 14px;color:var(--text);font-size:14px;margin-bottom:10px;font-family:inherit;
+    resize:vertical;}
+  .csv-overlay-box textarea:focus{outline:none;border-color:var(--green);}
+  .csv-overlay-box .hint-text{font-size:12px;color:var(--text-dim);margin-bottom:16px;line-height:1.5;}
+  .overlay-actions-row{display:flex;gap:10px;}
+  .overlay-actions-row button{flex:1;padding:13px;border-radius:14px;font-size:15px;font-weight:700;
+    border:1px solid var(--border);background:var(--panel-2);color:var(--text);cursor:pointer;}
+  .overlay-actions-row .primary{background:var(--green);border-color:var(--green);color:#00230d;}
+
+  /* duplicates */
+  .dup-group{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg);
+    padding:16px;margin-bottom:14px;}
+  .dup-group-title{font-size:15px;font-weight:800;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+  .dup-group-title .count{font-size:12px;color:var(--text-dim);font-weight:600;}
+  .dup-group-title .warn{font-size:11px;color:var(--amber);font-weight:700;background:rgba(255,176,32,.14);
+    padding:3px 8px;border-radius:8px;}
+  .dup-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--border);}
+  .dup-row:first-of-type{border-top:none;}
+  .dup-row .info{flex:1;min-width:0;}
+  .dup-row .setname{font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.3px;}
+  .dup-row .translation{font-size:15px;font-weight:600;margin-top:2px;}
+
+  .spell-item{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg);
+    padding:16px;margin-bottom:12px;}
+  .spell-item .meta{font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.3px;margin-bottom:8px;}
+  .spell-item .before{font-size:15px;color:var(--text-dim);text-decoration:line-through;margin-bottom:2px;}
+  .spell-item .after{font-size:17px;font-weight:700;color:var(--green);}
+  .spell-item .actions{display:flex;gap:10px;margin-top:12px;}
+  .spell-item .actions button{flex:1;padding:11px;border-radius:12px;font-size:14px;font-weight:700;
+    border:1px solid var(--border);background:var(--panel-2);color:var(--text);cursor:pointer;}
+  .spell-item .actions .apply-btn{background:var(--green);border-color:var(--green);color:#00230d;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HOME -->
+  <div class="screen active" id="view-home">
+    <div class="hero">
+      <div class="hero-icon">🗂️</div>
+      <h1>Vokabeltrainer</h1>
+      <p>DE · ES · FR · EN</p>
+    </div>
+    <button class="menu-btn" onclick="go('view-learn-setup')">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+      Lernen
+      <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
+    </button>
+    <button class="menu-btn" onclick="openEdit()">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
+      Bearbeiten
+      <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
+    </button>
+    <button class="menu-btn" onclick="go('view-settings')">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg></span>
+      Einstellungen
+      <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
+    </button>
+    <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
+  </div>
+
+  <!-- BEARBEITEN: Lernset-Liste -->
+  <div class="screen" id="view-edit-list">
+    <div class="topbar">
+      <div class="backbtn" onclick="go('view-home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></div>
+      <h1>Bearbeiten</h1>
+      <div class="spacer"></div>
+    </div>
+    <div id="editLangFilterContainer"></div>
+    <div id="setListContainer"></div>
+    <button class="btn-primary" onclick="openNewSet()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Neues Lernset
+    </button>
+  </div>
+
+  <!-- Neues Lernset erstellen -->
+  <div class="screen" id="view-new-set">
+    <div class="topbar">
+      <div class="backbtn" onclick="go('view-edit-list')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></div>
+      <h1>Neues Lernset</h1>
+      <div class="spacer"></div>
+    </div>
+    <div class="field">
+      <label>Name des Lernsets</label>
+      <input type="text" id="newSetName" placeholder="z. B. Reisen &amp; Alltag">
+    </div>
+    <div class="field">
+      <label>Ausgangssprache (Vorderseite)</label>
+      <div class="lang-grid" id="newSetSourceGrid"></div>
+    </div>
+    <div class="field">
+      <label>Zielsprache (Rückseite)</label>
+      <div class="lang-grid" id="newSetTargetGrid"></div>
+    </div>
+    <button class="btn-primary" onclick="createSet()">Lernset erstellen</button>
+  </div>
+
+  <!-- Lernset bearbeiten (Wörter) -->
+  <div class="screen" id="view-set-detail">
+    <div class="topbar">
+      <div class="backbtn" onclick="go('view-edit-list')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></div>
+      <h1 id="setDetailTitle">Lernset</h1>
+      <div class="backbtn" onclick="openSetActionsMenu()"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></div>
+    </div>
+
+    <div class="word-row">
+      <div class="word-inputs">
+        <div class="col">
+          <div class="tag"><span id="detailFlagSrc"></span> <span id="detailLangSrc"></span></div>
+          <input type="text" id="inputSource" placeholder="Wort eingeben">
+        </div>
+        <div class="col">
+          <div class="tag"><span id="detailFlagTgt"></span> <span id="detailLangTgt"></span></div>
+          <input type="text" id="inputTarget" placeholder="Übersetzung">
+        </div>
+      </div>
+      <button class="translate-btn" id="translateBtn" onclick="autoTranslate()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h9M9 5v3M13 8c-1 5-4 8-7 9M9 12c1.5 2 3.5 3.5 6 4M17 21l3.5-9L24 21M17.8 18.5h5.4"/></svg>
+        Automatisch übersetzen
+      </button>
+      <button class="btn-primary" style="padding:13px" id="addOrUpdateBtn" onclick="addCard()">Wort hinzufügen</button>
+      <button class="btn-ghost hidden" id="cancelEditBtn" style="padding:4px;" onclick="cancelEditCard()">Bearbeitung abbrechen</button>
+    </div>
+
+    <div class="section-label">Wörter (<span id="cardCount">0</span>)</div>
+    <div class="card-box"><div id="cardListContainer"></div></div>
+  </div>
+
+  <!-- EINSTELLUNGEN -->
+  <div class="screen" id="view-settings">
+    <div class="topbar">
+      <div class="backbtn" onclick="go('view-home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></div>
+      <h1>Einstellungen</h1>
+      <div class="spacer"></div>
+    </div>
+    <div class="section-label">Synchronisierung</div>
+    <div class="card-box" style="padding:18px;">
+      <div class="sync-pill" style="justify-content:flex-start;margin:0 0 6px;">
+        <span class="dot off" id="syncDot2"></span><span id="syncText2">Nicht verbunden</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-dim);line-height:1.5;">Deine Lernsets werden automatisch zwischen iPhone und iPad synchronisiert, solange beide Geräte online sind.</div>
+    </div>
+
+    <div class="section-label">Sprachausgabe</div>
+    <div class="card-box" style="padding:18px;margin-bottom:22px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <label style="font-size:14px;font-weight:600;">Sprechgeschwindigkeit</label>
+        <span id="speechRateLabel" style="font-size:13px;color:var(--green);font-weight:700;">0.85×</span>
+      </div>
+      <input type="range" id="speechRateSlider" min="0.5" max="1.3" step="0.05" value="0.85"
+        oninput="updateSpeechRate(this.value)" style="width:100%;margin-bottom:20px;accent-color:var(--green);">
+
+      <div class="voice-select-row">
+        <label>🇪🇸 Spanisch</label>
+        <select id="voiceSelectES" onchange="updateSpeechVoice('ES', this.value)">
+          <option value="es-ES">Spanien</option>
+          <option value="es-MX">Mexiko</option>
+          <option value="es-US">USA</option>
+          <option value="es-AR">Argentinien</option>
+        </select>
+      </div>
+      <div class="voice-select-row">
+        <label>🇬🇧 Englisch</label>
+        <select id="voiceSelectEN" onchange="updateSpeechVoice('EN', this.value)">
+          <option value="en-GB">Britisch</option>
+          <option value="en-US">Amerikanisch</option>
+          <option value="en-AU">Australisch</option>
+        </select>
+      </div>
+      <div class="voice-select-row" style="margin-bottom:0;">
+        <label>🇫🇷 Französisch</label>
+        <select id="voiceSelectFR" onchange="updateSpeechVoice('FR', this.value)">
+          <option value="fr-FR">Frankreich</option>
+          <option value="fr-CA">Kanada</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="section-label">Zuletzt gelöscht</div>
+    <div class="card-box"><div id="trashContainer"></div></div>
+    <div class="section-label">Werkzeuge</div>
+    <button class="btn-secondary" style="margin-bottom:12px;" onclick="go('view-duplicates')">Duplikate suchen</button>
+    <button class="btn-secondary" style="margin-bottom:22px;" onclick="go('view-spellcheck')">Rechtschreibprüfung</button>
+    <div class="section-label">Daten</div>
+    <button class="btn-secondary btn-danger" style="margin-bottom:12px;" onclick="confirmReset()">Alle Lernsets löschen</button>
+  </div>
+
+  <!-- DUPLIKATE SUCHEN -->
+  <div class="screen" id="view-duplicates">
+    <div class="topbar">
+      <div class="backbtn" onclick="go('view-settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></div>
+      <h1>Duplikate</h1>
+      <div class="spacer"></div>
+    </div>
+    <div id="duplicatesContainer"></div>
+  </div>
+
+  <!-- RECHTSCHREIBPRÜFUNG -->
+  <div class="screen" id="view-spellcheck">
+    <div class="topbar">
+      <div class="backbtn" onclick="go('view-settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></div>
+      <h1>Rechtschreibung</h1>
+      <div class="spacer"></div>
+    </div>
+    <button class="btn-primary" id="spellCheckStartBtn" style="margin-bottom:22px;" onclick="runSpellCheck()">Prüfung starten</button>
+    <div id="spellCheckContainer"></div>
+  </div>
+
+  <!-- LERNEN: Setup -->
+  <div class="screen" id="view-learn-setup">
+    <div class="topbar">
+      <div class="backbtn" onclick="go('view-home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></div>
+      <h1>Lernen</h1>
+      <div class="spacer"></div>
+    </div>
+
+    <div id="setLangFilterContainer"></div>
+    <div class="section-label">Lernset</div>
+    <div class="card-box" style="padding:0;background:none;border:none;margin-bottom:26px;" id="setSelectorContainer"></div>
+
+    <div class="section-label">Kategorie</div>
+    <div class="card-box" style="padding:0;background:none;border:none;">
+      <div class="pill-row" id="categoryPills" style="padding:0 0 26px;"></div>
+    </div>
+
+    <div class="section-label">Lernmodus</div>
+    <div class="card-box" id="modeListBox"></div>
+
+    <button class="btn-primary" id="startBtn" onclick="startSession()">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      Start
+    </button>
+  </div>
+
+  <!-- LERNEN: Karteikarten-Session -->
+  <div class="screen" id="view-session-cards">
+    <div class="topbar">
+      <div class="backbtn" onclick="exitSession()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg></div>
+      <div class="session-count" id="sessCount">1 / 10</div>
+      <div class="spacer"></div>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="mc-stats hidden" id="sessStats"><span class="ok">✓ 0</span><span class="bad">✗ 0</span></div>
+
+    <div class="flashcard-wrap">
+      <div class="flashcard" id="flashcard" onclick="flipCard()">
+        <span class="flagtag" id="cardFlag">🇩🇪</span>
+        <div class="card-edit-btn" onclick="event.stopPropagation(); openCardEditor()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></div>
+        <div class="word" id="cardWord">Wort</div>
+        <div class="sub" id="cardSub"></div>
+        <span class="tapinfo" id="tapInfo">Tippen, um Lösung zu zeigen</span>
+      </div>
+    </div>
+
+    <div class="icon-row">
+      <button class="icon-btn" onclick="prevCard()" id="prevBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <button class="icon-btn rf-inline rf-false hidden" onclick="rateRf(false)" id="rfFalseBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+      <button class="icon-btn speak" onclick="speakCurrent()" id="speakBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 6a9 9 0 0 1 0 12"/></svg></button>
+      <button class="icon-btn rf-inline rf-true hidden" onclick="rateRf(true)" id="rfTrueBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+      <button class="icon-btn" onclick="nextCard()" id="nextBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+    </div>
+
+    <div class="diff-row" id="diffRow" style="visibility:hidden;">
+      <button class="diff-btn leicht" onclick="rateCard('leicht')">Einfach</button>
+      <button class="diff-btn mittel" onclick="rateCard('mittel')">Mittel</button>
+      <button class="diff-btn schwer" onclick="rateCard('schwer')">Schwer</button>
+    </div>
+    <div class="diff-hint" id="diffHint"></div>
+  </div>
+
+  <!-- LERNEN: Liste -->
+  <div class="screen" id="view-session-list">
+    <div class="topbar">
+      <div class="backbtn" onclick="exitSession()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg></div>
+      <h1>Liste</h1>
+      <div class="spacer"></div>
+    </div>
+    <div class="card-box"><div id="listModeContainer"></div></div>
+  </div>
+
+  <!-- LERNEN: Multiple Choice -->
+  <div class="screen" id="view-session-mc">
+    <div class="topbar">
+      <div class="backbtn" onclick="exitSession()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg></div>
+      <div class="session-count" id="mcCount">1 / 10</div>
+      <div class="spacer"></div>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="mcProgressFill" style="width:0%"></div></div>
+    <div class="mc-stats" id="mcStats"><span class="ok">✓ 0</span><span class="bad">✗ 0</span></div>
+    <div class="mc-word">
+      <div class="flagtag" id="mcFlag">🇩🇪</div>
+      <div class="word" id="mcWord">Wort</div>
+    </div>
+    <div class="mc-options" id="mcOptions"></div>
+    <button class="btn-primary hidden" id="mcNextBtn" style="margin:18px auto 0; width:auto; display:flex; padding:14px 40px;" onclick="mcAdvance()">Weiter</button>
+  </div>
+
+  <!-- Fertig -->
+  <div class="screen" id="view-session-done">
+    <div class="done-wrap">
+      <div class="ic">🎉</div>
+      <h2>Runde abgeschlossen</h2>
+      <p id="doneSummary">Gut gemacht!</p>
+      <button class="btn-primary" onclick="go('view-learn-setup')">Zurück zur Übersicht</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="action-menu-wrap" id="setActionsMenuWrap">
+  <div class="action-menu-backdrop" onclick="closeSetActionsMenu()"></div>
+  <div class="action-menu">
+    <div class="action-menu-item" onclick="closeSetActionsMenu(); openRenameSet()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      Set umbenennen
+    </div>
+    <div class="action-menu-item" onclick="closeSetActionsMenu(); openCsvImport()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg>
+      CSV aus Text einfügen
+    </div>
+    <div class="action-menu-item" onclick="closeSetActionsMenu(); exportSetCsv()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12M7 11l5 5 5-5M5 20h14"/></svg>
+      CSV exportieren
+    </div>
+    <div class="action-menu-divider"></div>
+    <div class="action-menu-item" onclick="closeSetActionsMenu(); duplicateSet()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+      Set duplizieren
+    </div>
+    <div class="action-menu-divider"></div>
+    <div class="action-menu-item danger" onclick="closeSetActionsMenu(); deleteCurrentSet()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>
+      Set löschen
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="renameSetOverlay">
+  <div class="rename-overlay-box">
+    <h3>Lernset umbenennen</h3>
+    <input type="text" id="renameSetInput" placeholder="Name des Lernsets">
+    <div class="overlay-actions-row">
+      <button onclick="closeRenameSet()">Abbrechen</button>
+      <button class="primary" onclick="saveRenameSet()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="csvImportOverlay">
+  <div class="csv-overlay-box">
+    <h3>CSV aus Text einfügen</h3>
+    <div class="hint-text">Eine Zeile pro Wortpaar, Ausgangs- und Zielsprache getrennt durch Komma, Semikolon oder Tab (z. B. aus Excel kopiert).</div>
+    <textarea id="csvImportText" placeholder="Hund, el perro&#10;Katze, el gato"></textarea>
+    <div class="overlay-actions-row">
+      <button onclick="closeCsvImport()">Abbrechen</button>
+      <button class="primary" onclick="processCsvImport()">Wörter importieren</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="headerCheckOverlay">
+  <div class="modal-box">
+    <p id="headerCheckMessage">Kopfzeile erkannt?</p>
+    <div class="modal-actions">
+      <button onclick="finishCsvImport(false)">Nein, alle verwenden</button>
+      <button class="confirm-btn" style="background:var(--green);border-color:var(--green);color:#00230d;" onclick="finishCsvImport(true)">Ja, überspringen</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <p id="modalMessage">Bist du sicher?</p>
+    <div class="modal-actions">
+      <button id="modalCancelBtn" onclick="closeModal()">Abbrechen</button>
+      <button class="confirm-btn" id="modalConfirmBtn">Löschen</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="cardEditOverlay">
+  <div class="edit-overlay-box">
+    <h3>Wort korrigieren</h3>
+    <div class="col">
+      <div class="tag"><span id="cardEditFlagSrc"></span> <span id="cardEditLangSrc"></span></div>
+      <input type="text" id="cardEditSource">
+    </div>
+    <div class="col">
+      <div class="tag"><span id="cardEditFlagTgt"></span> <span id="cardEditLangTgt"></span></div>
+      <input type="text" id="cardEditTarget">
+    </div>
+    <div class="edit-overlay-actions">
+      <div class="row">
+        <button onclick="closeCardEditor()">Abbrechen</button>
+        <button class="save-btn" onclick="saveCardEditFromSession()">Speichern</button>
+      </div>
+      <button class="delete-btn" onclick="deleteCardFromSession()">Karte löschen</button>
+    </div>
+  </div>
+</div>
+
+<script>
+window.addEventListener('error', function(e){
+  try{ showToast('Fehler: ' + (e.message || 'unbekannt')); }catch(_){}
+  console.error('Globaler Fehler:', e.message, e.filename, e.lineno);
+});
+window.addEventListener('unhandledrejection', function(e){
+  try{ showToast('Fehler (async): ' + (e.reason && e.reason.message ? e.reason.message : e.reason)); }catch(_){}
+  console.error('Unhandled rejection:', e.reason);
+});
+
+const firebaseConfig = {
+  apiKey: "AIzaSyD272Vmpf6UF-clUiAsPpY5cSGNn36uzIo",
+  authDomain: "vokabeltrainer-by-petrichor.firebaseapp.com",
+  projectId: "vokabeltrainer-by-petrichor",
+  storageBucket: "vokabeltrainer-by-petrichor.firebasestorage.app",
+  messagingSenderId: "450361458804",
+  appId: "1:450361458804:web:0b6c42fada095e8ac29121"
+};
+
+let fbApp, db, docRef;
+let firebaseReady = false;
+let suppressNextSnapshot = false;
+let fsSetDoc, fsOnSnapshot;
+
+async function loadFirebase(){
+  try{
+    const appMod = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
+    const fsMod = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+    fbApp = appMod.initializeApp(firebaseConfig);
+    db = fsMod.getFirestore(fbApp);
+    docRef = fsMod.doc(db, "vokabeltrainer", "data");
+    fsSetDoc = fsMod.setDoc;
+    fsOnSnapshot = fsMod.onSnapshot;
+    firebaseReady = true;
+  }catch(e){
+    console.error("Firebase konnte nicht geladen werden (kein Netzwerk oder blockiert):", e);
+    firebaseReady = false;
+  }
+}
+
+/* ============ LANGUAGES ============ */
+const LANGS = {
+  DE:{flag:"🇩🇪", name:"Deutsch", speech:"de-DE", mm:"de"},
+  ES:{flag:"🇪🇸", name:"Spanisch", speech:"es-ES", mm:"es"},
+  FR:{flag:"🇫🇷", name:"Französisch", speech:"fr-FR", mm:"fr"},
+  EN:{flag:"🇬🇧", name:"Englisch", speech:"en-GB", mm:"en"},
+};
+const LANG_KEYS = Object.keys(LANGS);
+
+/* ============ STATE ============ */
+let appData = { learnSets: [], deletedSets: [], lastUsedSetId: null };
+let currentSetId = null;
+let setLangFilter = 'alle';
+let editLangFilter = 'alle';
+let currentCategory = "alle";
+let currentMode = null; // 'fwd' | 'bwd' | 'list' | 'mc'
+let newSetSource = "DE";
+let newSetTarget = "ES";
+
+let session = { cards: [], index: 0, flipped: false, mode: null };
+let mcState = { pool: [], index: 0, correct: 0, wrong: 0, locked:false };
+
+const LS_KEY = "vokabeltrainer_data_v1";
+const SPEECH_LS_KEY = "vokabeltrainer_speech_settings_v1";
+let speechSettings = { rate: 0.85, ES: 'es-ES', EN: 'en-GB', FR: 'fr-FR' };
+
+function loadSpeechSettings(){
+  try{
+    const raw = localStorage.getItem(SPEECH_LS_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      speechSettings = Object.assign(speechSettings, parsed);
+    }
+  }catch(e){}
+  document.getElementById('speechRateSlider').value = speechSettings.rate;
+  document.getElementById('speechRateLabel').textContent = speechSettings.rate.toFixed(2) + '×';
+  document.getElementById('voiceSelectES').value = speechSettings.ES;
+  document.getElementById('voiceSelectEN').value = speechSettings.EN;
+  document.getElementById('voiceSelectFR').value = speechSettings.FR;
+}
+function saveSpeechSettings(){
+  try{ localStorage.setItem(SPEECH_LS_KEY, JSON.stringify(speechSettings)); }catch(e){}
+}
+function updateSpeechRate(val){
+  speechSettings.rate = parseFloat(val);
+  document.getElementById('speechRateLabel').textContent = speechSettings.rate.toFixed(2) + '×';
+  saveSpeechSettings();
+}
+window.updateSpeechRate = updateSpeechRate;
+function updateSpeechVoice(langKey, val){
+  speechSettings[langKey] = val;
+  saveSpeechSettings();
+}
+window.updateSpeechVoice = updateSpeechVoice;
+function getSpeechLangCode(langKey){
+  return speechSettings[langKey] || LANGS[langKey].speech;
+}
+
+/* ============ PERSISTENCE ============ */
+function loadLocal(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(raw) appData = JSON.parse(raw);
+  }catch(e){}
+  if(!appData.deletedSets) appData.deletedSets = [];
+  if(!appData.learnSets) appData.learnSets = [];
+  if(appData.lastUsedSetId === undefined) appData.lastUsedSetId = null;
+  purgeExpiredDeletedSets();
+}
+function saveLocal(){
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(appData)); }catch(e){}
+}
+
+function setSyncStatus(state){
+  // state: 'off' | 'ok' | 'busy'
+  const dot = document.getElementById('syncDot');
+  const dot2 = document.getElementById('syncDot2');
+  const txt = document.getElementById('syncText');
+  const txt2 = document.getElementById('syncText2');
+  const map = { off:"Nicht verbunden", ok:"Synchronisiert", busy:"Synchronisiere…" };
+  [dot,dot2].forEach(d=>{ if(d){ d.classList.remove('off','busy'); if(state!=='ok') d.classList.add(state); }});
+  [txt,txt2].forEach(t=>{ if(t) t.textContent = map[state]; });
+}
+
+let writeTimer = null;
+function persist(){
+  saveLocal();
+  render();
+  if(!firebaseReady) { setSyncStatus('off'); return; }
+  setSyncStatus('busy');
+  clearTimeout(writeTimer);
+  writeTimer = setTimeout(()=>{
+    suppressNextSnapshot = true;
+    fsSetDoc(docRef, { learnSets: appData.learnSets, deletedSets: appData.deletedSets, lastUsedSetId: appData.lastUsedSetId||null, updatedAt: Date.now() })
+      .then(()=> setSyncStatus('ok'))
+      .catch(err=>{ console.error(err); setSyncStatus('off'); });
+  }, 500);
+}
+
+async function initFirebaseSync(){
+  setSyncStatus('busy');
+  await loadFirebase();
+  if(!firebaseReady){ setSyncStatus('off'); return; }
+  fsOnSnapshot(docRef, (snap)=>{
+    if(suppressNextSnapshot){ suppressNextSnapshot = false; setSyncStatus('ok'); return; }
+    if(snap.exists()){
+      const remote = snap.data();
+      if(remote && Array.isArray(remote.learnSets)){
+        appData.learnSets = remote.learnSets;
+        appData.deletedSets = Array.isArray(remote.deletedSets) ? remote.deletedSets : [];
+        appData.lastUsedSetId = remote.lastUsedSetId || null;
+        purgeExpiredDeletedSets();
+        saveLocal();
+        render();
+      }
+    }
+    setSyncStatus('ok');
+  }, (err)=>{
+    console.error("snapshot error", err);
+    setSyncStatus('off');
+  });
+}
+
+/* ============ UTIL ============ */
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=> t.classList.remove('show'), 2200);
+}
+
+function showConfirm(message, onConfirm){
+  document.getElementById('modalMessage').textContent = message;
+  const overlay = document.getElementById('modalOverlay');
+  const btn = document.getElementById('modalConfirmBtn');
+  overlay.classList.add('show');
+  const handler = ()=>{
+    overlay.classList.remove('show');
+    btn.removeEventListener('click', handler);
+    onConfirm();
+  };
+  btn.removeEventListener('click', btn._lastHandler || (()=>{}));
+  btn._lastHandler = handler;
+  btn.addEventListener('click', handler);
+}
+function closeModal(){
+  document.getElementById('modalOverlay').classList.remove('show');
+}
+window.closeModal = closeModal;
+
+function showTwoChoice(message, yesLabel, noLabel, onYes, onNo){
+  document.getElementById('modalMessage').textContent = message;
+  const overlay = document.getElementById('modalOverlay');
+  const yesBtn = document.getElementById('modalConfirmBtn');
+  const noBtn = document.getElementById('modalCancelBtn');
+
+  yesBtn.textContent = yesLabel;
+  yesBtn.style.background = 'var(--green)';
+  yesBtn.style.borderColor = 'var(--green)';
+  yesBtn.style.color = '#00230d';
+  noBtn.textContent = noLabel;
+
+  overlay.classList.add('show');
+
+  function restore(){
+    yesBtn.textContent = 'Löschen';
+    yesBtn.style.background = '';
+    yesBtn.style.borderColor = '';
+    yesBtn.style.color = '';
+    noBtn.textContent = 'Abbrechen';
+    yesBtn.removeEventListener('click', yesHandler);
+    noBtn.removeEventListener('click', noHandler);
+  }
+  function yesHandler(){ overlay.classList.remove('show'); restore(); onYes(); }
+  function noHandler(){ overlay.classList.remove('show'); restore(); if(onNo) onNo(); }
+
+  yesBtn.removeEventListener('click', yesBtn._lastHandler || (()=>{}));
+  noBtn.removeEventListener('click', noBtn._lastHandler || (()=>{}));
+  yesBtn._lastHandler = yesHandler;
+  noBtn._lastHandler = noHandler;
+  yesBtn.addEventListener('click', yesHandler);
+  noBtn.addEventListener('click', noHandler);
+}
+function switchScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function getSet(id){ return appData.learnSets.find(s=>s.id===id); }
+
+/* ============ HOME / EDIT LIST ============ */
+function openEdit(){
+  editLangFilter = 'alle';
+  renderSetList();
+  switchScreen('view-edit-list');
+}
+window.openEdit = openEdit;
+
+function renderEditLangFilter(){
+  const container = document.getElementById('editLangFilterContainer');
+  const targets = [...new Set(appData.learnSets.map(s=>s.target))];
+  if(targets.length <= 1){
+    container.innerHTML = '';
+    if(editLangFilter !== 'alle') editLangFilter = 'alle';
+    return;
+  }
+  const allCount = appData.learnSets.length;
+  const pills = [`<div class="lang-filter-pill ${editLangFilter==='alle'?'active':''}" onclick="selectEditLangFilter('alle')">🌐<span class="fcount">${allCount}</span></div>`];
+  targets.forEach(t=>{
+    const count = appData.learnSets.filter(s=>s.target===t).length;
+    pills.push(`<div class="lang-filter-pill ${editLangFilter===t?'active':''}" onclick="selectEditLangFilter('${t}')">${LANGS[t].flag}<span class="fcount">${count}</span></div>`);
+  });
+  container.innerHTML = `<div class="lang-filter-row">${pills.join('')}</div>`;
+}
+
+function selectEditLangFilter(target){
+  editLangFilter = target;
+  renderSetList();
+}
+window.selectEditLangFilter = selectEditLangFilter;
+
+function renderSetList(){
+  renderEditLangFilter();
+  const c = document.getElementById('setListContainer');
+  const visible = editLangFilter==='alle' ? appData.learnSets : appData.learnSets.filter(s=>s.target===editLangFilter);
+  if(appData.learnSets.length===0){
+    c.innerHTML = `<div class="empty"><div class="ic">📭</div><p>Noch keine Lernsets</p><p>Erstelle dein erstes Lernset, um Wörter zu sammeln.</p></div>`;
+    return;
+  }
+  if(visible.length===0){
+    c.innerHTML = `<div class="empty"><div class="ic">🔍</div><p>Keine Lernsets für diesen Filter</p></div>`;
+    return;
+  }
+  c.innerHTML = visible.slice().sort((a,b)=> a.name.localeCompare(b.name, 'de')).map(s=>{
+    const src = LANGS[s.source], tgt = LANGS[s.target];
+    return `<div class="set-card" onclick="openSetDetail('${s.id}')">
+      <div class="set-flags">${src.flag}<span class="arrow">→</span>${tgt.flag}</div>
+      <div class="set-info"><div class="name">${escapeHtml(s.name)}</div><div class="count">${s.cards.length} Wörter</div></div>
+      <div class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></div>
+    </div>`;
+  }).join('');
+}
+window.renderSetList = renderSetList;
+
+function escapeHtml(str){
+  return (str||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+/* ============ NEW SET ============ */
+function openNewSet(){
+  document.getElementById('newSetName').value = "";
+  newSetSource = "DE"; newSetTarget = "ES";
+  renderLangGrid('newSetSourceGrid', 'source');
+  renderLangGrid('newSetTargetGrid', 'target');
+  switchScreen('view-new-set');
+}
+window.openNewSet = openNewSet;
+
+function renderLangGrid(containerId, kind){
+  const c = document.getElementById(containerId);
+  c.innerHTML = LANG_KEYS.map(k=>{
+    const active = (kind==='source' ? newSetSource : newSetTarget) === k;
+    return `<div class="lang-opt ${active?'active':''}" onclick="pickLang('${kind}','${k}')">
+      <span class="flag">${LANGS[k].flag}</span> ${LANGS[k].name}
+    </div>`;
+  }).join('');
+}
+function pickLang(kind, key){
+  if(kind==='source') newSetSource = key; else newSetTarget = key;
+  renderLangGrid('newSetSourceGrid','source');
+  renderLangGrid('newSetTargetGrid','target');
+}
+window.pickLang = pickLang;
+
+function createSet(){
+  const name = document.getElementById('newSetName').value.trim();
+  if(!name){ showToast("Bitte einen Namen eingeben"); return; }
+  if(newSetSource === newSetTarget){ showToast("Ausgangs- und Zielsprache müssen sich unterscheiden"); return; }
+  const set = { id: uid(), name, source: newSetSource, target: newSetTarget, cards: [] };
+  appData.learnSets.push(set);
+  persist();
+  openSetDetail(set.id);
+}
+window.createSet = createSet;
+
+/* ============ SET DETAIL (edit words) ============ */
+function openSetDetail(id){
+  currentSetId = id;
+  const s = getSet(id);
+  if(!s) return;
+  document.getElementById('setDetailTitle').textContent = s.name;
+  document.getElementById('detailFlagSrc').textContent = LANGS[s.source].flag;
+  document.getElementById('detailLangSrc').textContent = LANGS[s.source].name;
+  document.getElementById('detailFlagTgt').textContent = LANGS[s.target].flag;
+  document.getElementById('detailLangTgt').textContent = LANGS[s.target].name;
+  document.getElementById('inputSource').value = "";
+  document.getElementById('inputTarget').value = "";
+  editingCardId = null;
+  document.getElementById('addOrUpdateBtn').textContent = 'Wort hinzufügen';
+  document.getElementById('cancelEditBtn').classList.add('hidden');
+  renderCardList();
+  switchScreen('view-set-detail');
+}
+window.openSetDetail = openSetDetail;
+
+/* ============ SET ACTIONS MENU ============ */
+function openSetActionsMenu(){
+  document.getElementById('setActionsMenuWrap').classList.add('show');
+}
+window.openSetActionsMenu = openSetActionsMenu;
+function closeSetActionsMenu(){
+  document.getElementById('setActionsMenuWrap').classList.remove('show');
+}
+window.closeSetActionsMenu = closeSetActionsMenu;
+
+/* ---- Rename ---- */
+function openRenameSet(){
+  const s = getSet(currentSetId);
+  if(!s) return;
+  document.getElementById('renameSetInput').value = s.name;
+  document.getElementById('renameSetOverlay').classList.add('show');
+}
+window.openRenameSet = openRenameSet;
+function closeRenameSet(){
+  document.getElementById('renameSetOverlay').classList.remove('show');
+}
+window.closeRenameSet = closeRenameSet;
+function saveRenameSet(){
+  const s = getSet(currentSetId);
+  if(!s) return;
+  const name = document.getElementById('renameSetInput').value.trim();
+  if(!name){ showToast("Bitte einen Namen eingeben"); return; }
+  s.name = name;
+  persist();
+  document.getElementById('setDetailTitle').textContent = name;
+  closeRenameSet();
+  showToast("Umbenannt");
+}
+window.saveRenameSet = saveRenameSet;
+
+/* ---- CSV Export ---- */
+function exportSetCsv(){
+  const s = getSet(currentSetId);
+  if(!s) return;
+  if(s.cards.length===0){ showToast("Keine Wörter zum Exportieren"); return; }
+  const lines = s.cards.map(c => `${csvEscape(c.source)},${csvEscape(c.target)}`);
+  const csv = lines.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${s.name.replace(/[^a-z0-9äöüß _-]/gi,'_')}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=> URL.revokeObjectURL(url), 2000);
+}
+window.exportSetCsv = exportSetCsv;
+function csvEscape(str){
+  str = String(str);
+  if(str.includes(',') || str.includes('"') || str.includes('\n')){
+    return '"' + str.replace(/"/g,'""') + '"';
+  }
+  return str;
+}
+
+/* ---- CSV aus Text einfügen ---- */
+let pendingCsvRows = [];
+function openCsvImport(){
+  document.getElementById('csvImportText').value = '';
+  document.getElementById('csvImportOverlay').classList.add('show');
+}
+window.openCsvImport = openCsvImport;
+function closeCsvImport(){
+  document.getElementById('csvImportOverlay').classList.remove('show');
+}
+window.closeCsvImport = closeCsvImport;
+
+function detectDelimiter(line){
+  const counts = { '\t': (line.split('\t').length-1), ';': (line.split(';').length-1), ',': (line.split(',').length-1) };
+  let best = '\t';
+  let bestCount = -1;
+  for(const d of ['\t',';',',']){
+    if(counts[d] > bestCount){ bestCount = counts[d]; best = d; }
+  }
+  return bestCount > 0 ? best : ',';
+}
+
+function looksLikeHeader(row, s){
+  const headerWords = ['wort','übersetzung','translation','source','target','front','back','deutsch','spanisch','französisch','englisch','german','spanish','french','english'];
+  const a = (row[0]||'').trim().toLowerCase();
+  const b = (row[1]||'').trim().toLowerCase();
+  if(headerWords.includes(a) || headerWords.includes(b)) return true;
+  if(s){
+    const srcName = LANGS[s.source].name.toLowerCase();
+    const tgtName = LANGS[s.target].name.toLowerCase();
+    if(a===srcName || b===tgtName || a===tgtName || b===srcName) return true;
+  }
+  return false;
+}
+
+function processCsvImport(){
+  const raw = document.getElementById('csvImportText').value;
+  if(!raw.trim()){ showToast("Bitte Text einfügen"); return; }
+  const lines = raw.split(/\r\n|\n|\r/).map(l=>l.trim()).filter(l=>l.length>0);
+  if(lines.length===0){ showToast("Keine Zeilen gefunden"); return; }
+  const delim = detectDelimiter(lines[0]);
+  const rows = lines.map(l=>{
+    const parts = l.split(delim).map(p=>p.trim().replace(/^"|"$/g,''));
+    return [parts[0]||'', parts[1]||''];
+  }).filter(r => r[0] && r[1]);
+
+  if(rows.length===0){ showToast("Konnte keine Wortpaare erkennen"); return; }
+
+  pendingCsvRows = rows;
+  const s = getSet(currentSetId);
+  if(looksLikeHeader(rows[0], s)){
+    document.getElementById('headerCheckMessage').textContent = `Die erste Zeile "${rows[0][0]}, ${rows[0][1]}" sieht wie eine Kopfzeile aus. Überspringen?`;
+    document.getElementById('headerCheckOverlay').classList.add('show');
+  } else {
+    finishCsvImport(false);
+  }
+}
+window.processCsvImport = processCsvImport;
+
+function finishCsvImport(skipFirst){
+  document.getElementById('headerCheckOverlay').classList.remove('show');
+  const s = getSet(currentSetId);
+  if(!s) { pendingCsvRows = []; return; }
+  let rows = pendingCsvRows;
+  if(skipFirst) rows = rows.slice(1);
+  rows.forEach(r=>{
+    s.cards.push({ id: uid(), source: r[0], target: r[1], difficulty: 'neu' });
+  });
+  pendingCsvRows = [];
+  persist();
+  closeCsvImport();
+  renderCardList();
+  showToast(`${rows.length} Wörter importiert`);
+}
+window.finishCsvImport = finishCsvImport;
+
+/* ---- Set duplizieren ---- */
+function duplicateSet(){
+  const s = getSet(currentSetId);
+  if(!s) return;
+  const copy = {
+    id: uid(),
+    name: s.name + ' (Kopie)',
+    source: s.source,
+    target: s.target,
+    cards: s.cards.map(c => ({ id: uid(), source: c.source, target: c.target, difficulty: c.difficulty || 'neu' }))
+  };
+  appData.learnSets.push(copy);
+  persist();
+  showToast("Lernset dupliziert");
+  openSetDetail(copy.id);
+}
+window.duplicateSet = duplicateSet;
+
+/* ============ DUPLIKATE SUCHEN ============ */
+function findDuplicateGroups(){
+  const groups = {};
+  appData.learnSets.forEach(s=>{
+    s.cards.forEach(c=>{
+      const norm = c.source.trim().toLowerCase();
+      const key = `${s.source}|${s.target}|${norm}`;
+      if(!groups[key]) groups[key] = [];
+      groups[key].push({ setId: s.id, setName: s.name, cardId: c.id, source: c.source, target: c.target });
+    });
+  });
+  return Object.values(groups).filter(g => g.length > 1);
+}
+
+function renderDuplicates(){
+  const container = document.getElementById('duplicatesContainer');
+  const groups = findDuplicateGroups();
+  if(groups.length===0){
+    container.innerHTML = `<div class="empty"><div class="ic">✅</div><p>Keine Duplikate gefunden</p></div>`;
+    return;
+  }
+  container.innerHTML = groups.map(group=>{
+    const uniqueTranslations = new Set(group.map(g=>g.target.trim().toLowerCase()));
+    const warn = uniqueTranslations.size > 1 ? `<span class="warn">Unterschiedliche Übersetzung</span>` : '';
+    const rows = group.map(g=>`
+      <div class="dup-row">
+        <div class="info">
+          <div class="setname">${escapeHtml(g.setName)}</div>
+          <div class="translation">${escapeHtml(g.target)}</div>
+        </div>
+        <div class="del-btn danger" onclick="deleteDuplicateCard('${g.setId}','${g.cardId}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg></div>
+      </div>`).join('');
+    return `<div class="dup-group">
+      <div class="dup-group-title">${escapeHtml(group[0].source)} <span class="count">(${group.length} Fundstellen)</span> ${warn}</div>
+      ${rows}
+    </div>`;
+  }).join('');
+}
+
+function deleteDuplicateCard(setId, cardId){
+  const s = appData.learnSets.find(x=>x.id===setId);
+  if(!s) return;
+  const card = s.cards.find(c=>c.id===cardId);
+  if(!card) return;
+  showConfirm(`Wort "${card.source}" aus "${s.name}" wirklich löschen?`, ()=>{
+    s.cards = s.cards.filter(c=>c.id!==cardId);
+    persist();
+    renderDuplicates();
+    showToast("Gelöscht");
+  });
+}
+window.deleteDuplicateCard = deleteDuplicateCard;
+
+/* ============ RECHTSCHREIBPRÜFUNG ============ */
+const LT_LANG_CODE = { DE:'de-DE', ES:'es', FR:'fr', EN:'en-US' };
+let spellCheckResults = [];
+
+function buildLanguageGroups(){
+  const groups = { DE:[], ES:[], FR:[], EN:[] };
+  appData.learnSets.forEach(s=>{
+    s.cards.forEach(c=>{
+      if(c.source && c.source.trim()) groups[s.source].push({ setId:s.id, setName:s.name, cardId:c.id, field:'source', text:c.source });
+      if(c.target && c.target.trim()) groups[s.target].push({ setId:s.id, setName:s.name, cardId:c.id, field:'target', text:c.target });
+    });
+  });
+  return groups;
+}
+
+async function checkLanguageGroup(langKey, entries){
+  if(entries.length===0) return [];
+  const text = entries.map(e=>e.text).join('\n');
+  const lineStarts = [];
+  let pos = 0;
+  entries.forEach(e=>{ lineStarts.push(pos); pos += e.text.length + 1; });
+
+  const body = new URLSearchParams({ text, language: LT_LANG_CODE[langKey] });
+  const res = await fetch('https://api.languagetool.org/v2/check', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body
+  });
+  if(!res.ok) throw new Error('LanguageTool antwortete mit ' + res.status);
+  const data = await res.json();
+
+  const seenLines = new Set();
+  const issues = [];
+  (data.matches || []).forEach(match=>{
+    if(!match.replacements || match.replacements.length===0) return;
+    let lineIdx = 0;
+    for(let i=0;i<lineStarts.length;i++){ if(lineStarts[i] <= match.offset) lineIdx = i; }
+    if(seenLines.has(lineIdx)) return; // nur ein Vorschlag pro Wort, damit es übersichtlich bleibt
+    seenLines.add(lineIdx);
+    const entry = entries[lineIdx];
+    const offsetInLine = match.offset - lineStarts[lineIdx];
+    const suggestion = match.replacements[0].value;
+    const corrected = entry.text.slice(0, offsetInLine) + suggestion + entry.text.slice(offsetInLine + match.length);
+    if(corrected.trim() === entry.text.trim()) return;
+    issues.push({
+      setId: entry.setId, setName: entry.setName, cardId: entry.cardId, field: entry.field,
+      original: entry.text, corrected, message: match.message
+    });
+  });
+  return issues;
+}
+
+async function runSpellCheck(){
+  const btn = document.getElementById('spellCheckStartBtn');
+  const container = document.getElementById('spellCheckContainer');
+  btn.disabled = true;
+  btn.textContent = 'Prüfe…';
+  container.innerHTML = `<div class="empty" style="padding:30px 16px;"><div class="ic">🔍</div><p>Prüfung läuft…</p></div>`;
+
+  try{
+    const groups = buildLanguageGroups();
+    const results = [];
+    for(const langKey of Object.keys(groups)){
+      const issues = await checkLanguageGroup(langKey, groups[langKey]);
+      results.push(...issues);
+    }
+    spellCheckResults = results;
+    renderSpellCheckResults();
+  }catch(err){
+    console.error(err);
+    container.innerHTML = `<div class="empty" style="padding:30px 16px;"><div class="ic">⚠️</div><p>Prüfung fehlgeschlagen (kein Netzwerk oder blockiert)</p></div>`;
+    showToast('Fehler: ' + err.message);
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Prüfung starten';
+  }
+}
+window.runSpellCheck = runSpellCheck;
+
+function renderSpellCheckResults(){
+  const container = document.getElementById('spellCheckContainer');
+  if(spellCheckResults.length===0){
+    container.innerHTML = `<div class="empty" style="padding:30px 16px;"><div class="ic">✅</div><p>Keine Auffälligkeiten gefunden</p></div>`;
+    return;
+  }
+  container.innerHTML = spellCheckResults.map((issue, i)=>{
+    const fieldLabel = issue.field === 'source' ? 'Ausgangssprache' : 'Zielsprache';
+    return `<div class="spell-item">
+      <div class="meta">${escapeHtml(issue.setName)} · ${fieldLabel}</div>
+      <div class="before">${escapeHtml(issue.original)}</div>
+      <div class="after">${escapeHtml(issue.corrected)}</div>
+      <div class="actions">
+        <button onclick="ignoreSpellCheckIssue(${i})">Ignorieren</button>
+        <button class="apply-btn" onclick="applySpellCheckIssue(${i})">Übernehmen</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function applySpellCheckIssue(i){
+  const issue = spellCheckResults[i];
+  if(!issue) return;
+  const s = appData.learnSets.find(x=>x.id===issue.setId);
+  if(!s) return;
+  const card = s.cards.find(c=>c.id===issue.cardId);
+  if(!card) return;
+  if(issue.field==='source') card.source = issue.corrected; else card.target = issue.corrected;
+  persist();
+  spellCheckResults.splice(i,1);
+  renderSpellCheckResults();
+  showToast("Übernommen");
+}
+window.applySpellCheckIssue = applySpellCheckIssue;
+
+function ignoreSpellCheckIssue(i){
+  spellCheckResults.splice(i,1);
+  renderSpellCheckResults();
+}
+window.ignoreSpellCheckIssue = ignoreSpellCheckIssue;
+
+function renderCardList(){
+  const s = getSet(currentSetId);
+  if(!s) return;
+  document.getElementById('cardCount').textContent = s.cards.length;
+  const c = document.getElementById('cardListContainer');
+  if(s.cards.length===0){
+    c.innerHTML = `<div class="empty" style="padding:36px 16px;"><div class="ic">✍️</div><p>Noch keine Wörter erfasst</p></div>`;
+    return;
+  }
+  c.innerHTML = s.cards.slice().reverse().map(card=>{
+    const diff = card.difficulty || 'neu';
+    const diffBadge = `<span class="diff-badge ${diff}" onclick="cycleDifficulty('${card.id}')">${diff}</span>`;
+    return `<div class="card-list-item">
+      <div class="words"><div class="w1">${escapeHtml(card.source)}</div><div class="w2">${escapeHtml(card.target)}</div></div>
+      ${diffBadge}
+      <div class="row-actions">
+        <div class="edit-btn" onclick="editCard('${card.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></div>
+        <div class="del-btn danger" onclick="deleteCard('${card.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function cycleDifficulty(cardId){
+  const s = getSet(currentSetId);
+  if(!s) return;
+  const card = s.cards.find(c=>c.id===cardId);
+  if(!card) return;
+  const order = ['neu','leicht','mittel','schwer'];
+  const current = card.difficulty || 'neu';
+  const next = order[(order.indexOf(current)+1) % order.length];
+  card.difficulty = next;
+  persist();
+  renderCardList();
+}
+window.cycleDifficulty = cycleDifficulty;
+
+let editingCardId = null;
+
+function editCard(cardId){
+  const s = getSet(currentSetId);
+  if(!s) return;
+  const card = s.cards.find(c=>c.id===cardId);
+  if(!card) return;
+  editingCardId = cardId;
+  document.getElementById('inputSource').value = card.source;
+  document.getElementById('inputTarget').value = card.target;
+  document.getElementById('addOrUpdateBtn').textContent = 'Änderungen speichern';
+  document.getElementById('cancelEditBtn').classList.remove('hidden');
+  document.getElementById('inputSource').focus();
+}
+window.editCard = editCard;
+
+function cancelEditCard(){
+  editingCardId = null;
+  document.getElementById('inputSource').value = '';
+  document.getElementById('inputTarget').value = '';
+  document.getElementById('addOrUpdateBtn').textContent = 'Wort hinzufügen';
+  document.getElementById('cancelEditBtn').classList.add('hidden');
+}
+window.cancelEditCard = cancelEditCard;
+
+function addCard(){
+  const s = getSet(currentSetId);
+  if(!s) return;
+  const src = document.getElementById('inputSource').value.trim();
+  const tgt = document.getElementById('inputTarget').value.trim();
+  if(!src || !tgt){ showToast("Bitte beide Wörter erfassen"); return; }
+
+  if(editingCardId){
+    const card = s.cards.find(c=>c.id===editingCardId);
+    if(card){ card.source = src; card.target = tgt; }
+    cancelEditCard();
+  } else {
+    s.cards.push({ id: uid(), source: src, target: tgt, difficulty: 'neu' });
+    document.getElementById('inputSource').value = "";
+    document.getElementById('inputTarget').value = "";
+  }
+  persist();
+  renderCardList();
+  document.getElementById('inputSource').focus();
+}
+window.addCard = addCard;
+
+function deleteCard(cardId){
+  const s = getSet(currentSetId);
+  if(!s) return;
+  const card = s.cards.find(c=>c.id===cardId);
+  if(!card) return;
+  showConfirm(`Wort "${card.source}" wirklich löschen?`, ()=>{
+    s.cards = s.cards.filter(c=>c.id!==cardId);
+    if(editingCardId===cardId) cancelEditCard();
+    persist();
+    renderCardList();
+  });
+}
+window.deleteCard = deleteCard;
+
+function deleteCurrentSet(){
+  const s = getSet(currentSetId);
+  if(!s) return;
+  showConfirm(`Lernset "${s.name}" wirklich löschen?`, ()=>{
+    appData.learnSets = appData.learnSets.filter(x=>x.id!==currentSetId);
+    s.deletedAt = Date.now();
+    appData.deletedSets.push(s);
+    persist();
+    switchScreen('view-edit-list');
+    renderSetList();
+    showToast("Gelöscht – 30 Tage wiederherstellbar");
+  });
+}
+window.deleteCurrentSet = deleteCurrentSet;
+
+function purgeExpiredDeletedSets(){
+  const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+  const now = Date.now();
+  if(!appData.deletedSets) { appData.deletedSets = []; return; }
+  const before = appData.deletedSets.length;
+  appData.deletedSets = appData.deletedSets.filter(s => (now - (s.deletedAt||0)) < THIRTY_DAYS);
+  if(appData.deletedSets.length !== before) saveLocal();
+}
+
+function daysLeft(deletedAt){
+  const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+  const remainMs = THIRTY_DAYS - (Date.now() - (deletedAt||0));
+  return Math.max(0, Math.ceil(remainMs / (24*60*60*1000)));
+}
+
+function renderTrash(){
+  purgeExpiredDeletedSets();
+  const box = document.getElementById('trashContainer');
+  if(!box) return;
+  if(!appData.deletedSets || appData.deletedSets.length===0){
+    box.innerHTML = `<div class="empty" style="padding:30px 16px;"><div class="ic">🗑️</div><p>Papierkorb ist leer</p></div>`;
+    return;
+  }
+  box.innerHTML = appData.deletedSets.slice().reverse().map(s=>{
+    const src = LANGS[s.source], tgt = LANGS[s.target];
+    const left = daysLeft(s.deletedAt);
+    return `<div class="set-card" style="cursor:default;">
+      <div class="set-flags">${src.flag}<span class="arrow">→</span>${tgt.flag}</div>
+      <div class="set-info"><div class="name">${escapeHtml(s.name)}</div><div class="count">${s.cards.length} Wörter · noch ${left} Tag${left===1?'':'e'}</div></div>
+      <div class="row-actions">
+        <div class="edit-btn" onclick="restoreSet('${s.id}')" title="Wiederherstellen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 2.6-6.3M3 5v6h6"/></svg></div>
+        <div class="del-btn danger" onclick="permanentlyDeleteSet('${s.id}')" title="Endgültig löschen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function restoreSet(id){
+  const idx = appData.deletedSets.findIndex(s=>s.id===id);
+  if(idx===-1) return;
+  const [s] = appData.deletedSets.splice(idx,1);
+  delete s.deletedAt;
+  appData.learnSets.push(s);
+  persist();
+  renderTrash();
+  showToast("Lernset wiederhergestellt");
+}
+window.restoreSet = restoreSet;
+
+function permanentlyDeleteSet(id){
+  const s = appData.deletedSets.find(x=>x.id===id);
+  if(!s) return;
+  showConfirm(`Lernset "${s.name}" endgültig und unwiderruflich löschen?`, ()=>{
+    appData.deletedSets = appData.deletedSets.filter(x=>x.id!==id);
+    persist();
+    renderTrash();
+  });
+}
+window.permanentlyDeleteSet = permanentlyDeleteSet;
+
+async function autoTranslate(){
+  const s = getSet(currentSetId);
+  if(!s) return;
+  const src = document.getElementById('inputSource').value.trim();
+  if(!src){ showToast("Bitte zuerst ein Wort eingeben"); return; }
+  const btn = document.getElementById('translateBtn');
+  btn.classList.add('loading');
+  btn.textContent = "Übersetze…";
+  try{
+    const pair = `${LANGS[s.source].mm}|${LANGS[s.target].mm}`;
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(src)}&langpair=${pair}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const translated = data?.responseData?.translatedText;
+    if(translated){
+      document.getElementById('inputTarget').value = translated;
+    }else{
+      showToast("Keine Übersetzung gefunden");
+    }
+  }catch(e){
+    console.error(e);
+    showToast("Übersetzung fehlgeschlagen");
+  }finally{
+    btn.classList.remove('loading');
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h9M9 5v3M13 8c-1 5-4 8-7 9M9 12c1.5 2 3.5 3.5 6 4M17 21l3.5-9L24 21M17.8 18.5h5.4"/></svg> Automatisch übersetzen`;
+  }
+}
+window.autoTranslate = autoTranslate;
+
+/* ============ SETTINGS ============ */
+function confirmReset(){
+  showConfirm("Wirklich alle Lernsets unwiderruflich löschen?", ()=>{
+    appData.learnSets = [];
+    persist();
+    showToast("Alle Lernsets gelöscht");
+  });
+}
+window.confirmReset = confirmReset;
+
+/* ============ LEARN SETUP ============ */
+function openLearnSetup(){
+  if(appData.learnSets.length===0){
+    currentSetId = null;
+  } else if(!getSet(currentSetId)){
+    const lastUsed = appData.lastUsedSetId && getSet(appData.lastUsedSetId);
+    currentSetId = lastUsed ? appData.lastUsedSetId : appData.learnSets[0].id;
+  }
+  currentCategory = "alle";
+  currentMode = null;
+  setLangFilter = 'alle';
+  renderLearnSetup();
+}
+
+function selectSet(id){
+  currentSetId = id;
+  appData.lastUsedSetId = id;
+  saveLocal();
+  currentCategory = "alle";
+  currentMode = null;
+  renderLearnSetup();
+}
+window.selectSet = selectSet;
+
+function getVisibleLearnSets(){
+  if(setLangFilter === 'alle') return appData.learnSets;
+  return appData.learnSets.filter(s => s.target === setLangFilter);
+}
+
+function renderSetLangFilter(){
+  const container = document.getElementById('setLangFilterContainer');
+  const targets = [...new Set(appData.learnSets.map(s=>s.target))];
+  if(targets.length <= 1){
+    container.innerHTML = '';
+    if(setLangFilter !== 'alle') setLangFilter = 'alle';
+    return;
+  }
+  const allCount = appData.learnSets.length;
+  const pills = [`<div class="lang-filter-pill ${setLangFilter==='alle'?'active':''}" onclick="selectLangFilter('alle')">🌐<span class="fcount">${allCount}</span></div>`];
+  targets.forEach(t=>{
+    const count = appData.learnSets.filter(s=>s.target===t).length;
+    pills.push(`<div class="lang-filter-pill ${setLangFilter===t?'active':''}" onclick="selectLangFilter('${t}')">${LANGS[t].flag}<span class="fcount">${count}</span></div>`);
+  });
+  container.innerHTML = `<div class="lang-filter-row">${pills.join('')}</div>`;
+}
+
+function selectLangFilter(target){
+  setLangFilter = target;
+  const visible = getVisibleLearnSets();
+  if(!visible.find(s=>s.id===currentSetId)){
+    currentSetId = visible.length ? visible[0].id : null;
+    currentCategory = "alle";
+    currentMode = null;
+  }
+  renderLearnSetup();
+}
+window.selectLangFilter = selectLangFilter;
+
+function cycleSet(){
+  const visible = getVisibleLearnSets();
+  if(visible.length===0) return;
+  const idx = visible.findIndex(s=>s.id===currentSetId);
+  const next = visible[(idx+1) % visible.length];
+  selectSet(next.id);
+}
+window.cycleSet = cycleSet;
+
+function getFilteredCards(){
+  const s = getSet(currentSetId);
+  if(!s) return [];
+  if(currentCategory==='alle') return s.cards;
+  return s.cards.filter(c => (c.difficulty||'neu') === currentCategory);
+}
+
+function renderSetSelector(s){
+  renderSetLangFilter();
+  const container = document.getElementById('setSelectorContainer');
+  const visible = getVisibleLearnSets();
+  if(visible.length === 0){
+    container.innerHTML = `<button class="select-pill" style="opacity:.6;cursor:default;"><span>Kein Lernset vorhanden</span></button>`;
+    return;
+  }
+  if(visible.length > 3){
+    const sorted = visible.slice().sort((a,b)=> a.name.localeCompare(b.name, 'de'));
+    container.innerHTML = `
+      <div class="select-native-wrap">
+        <select onchange="selectSet(this.value)">
+          ${sorted.map(set=>`<option value="${set.id}" ${set.id===currentSetId?'selected':''}>${escapeHtml(set.name)}</option>`).join('')}
+        </select>
+        <span class="chev-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></span>
+      </div>`;
+  } else {
+    container.innerHTML = `
+      <button class="select-pill" onclick="cycleSet()">
+        <span>${escapeHtml(s ? s.name : "–")}</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+      </button>`;
+  }
+}
+
+function renderLearnSetup(){
+  const s = getSet(currentSetId);
+  renderSetSelector(s);
+
+  const all = s ? s.cards : [];
+  const counts = {
+    alle: all.length,
+    neu: all.filter(c=>!c.difficulty || c.difficulty==='neu').length,
+    leicht: all.filter(c=>c.difficulty==='leicht').length,
+    mittel: all.filter(c=>c.difficulty==='mittel').length,
+    schwer: all.filter(c=>c.difficulty==='schwer').length,
+  };
+  const catBox = document.getElementById('categoryPills');
+  catBox.innerHTML = ['alle','neu','leicht','mittel','schwer'].map(cat=>{
+    const label = cat==='alle' ? 'Alle' : cat.charAt(0).toUpperCase()+cat.slice(1);
+    const active = currentCategory===cat ? 'active' : '';
+    return `<button class="pill ${active}" onclick="selectCategory('${cat}')">${label} (${counts[cat]})</button>`;
+  }).join('');
+
+  const filtered = getFilteredCards();
+  const n = filtered.length;
+  const mcDisabled = n < 4;
+  if(!currentMode) currentMode = 'fwd';
+  if(mcDisabled && currentMode==='mc') currentMode = 'fwd';
+
+  const src = s ? LANGS[s.source] : null, tgt = s ? LANGS[s.target] : null;
+  const modes = [
+    { key:'fwd', label:'Karteikarten', flags: s? `${src.flag} → ${tgt.flag}` : '', disabled: n===0 },
+    { key:'bwd', label:'Karteikarten', flags: s? `${tgt.flag} → ${src.flag}` : '', disabled: n===0 },
+    { key:'rf', label:'Richtig/Falsch', flags: s? `${src.flag} → ${tgt.flag}` : '', disabled: n===0 },
+    { key:'list', label:'Liste', flags:'', disabled: n===0 },
+    { key:'mc', label:'Multiple Choice', flags:'', disabled: mcDisabled, hint: mcDisabled ? 'Mind. 4 Karten' : '' },
+  ];
+  document.getElementById('modeListBox').innerHTML = modes.map(m=>{
+    const checked = currentMode===m.key;
+    return `<div class="mode-item ${m.disabled?'disabled':''}" onclick="${m.disabled?'':`selectMode('${m.key}')`}">
+      <div class="lbl">${m.label}${m.flags?`<span class="flags">${m.flags}</span>`:''}</div>
+      ${m.hint?`<div class="hint">${m.hint}</div>`:''}
+      <div class="radio ${checked?'checked':''}">${checked?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>':''}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('startBtn').disabled = !s || n===0;
+  switchScreen('view-learn-setup');
+}
+
+function selectCategory(cat){
+  currentCategory = cat;
+  renderLearnSetup();
+}
+window.selectCategory = selectCategory;
+
+function selectMode(mode){
+  currentMode = mode;
+  renderLearnSetup();
+}
+window.selectMode = selectMode;
+
+/* ============ START SESSION ============ */
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+function startSession(){
+  const s = getSet(currentSetId);
+  if(!s) return;
+  const cards = shuffle(getFilteredCards());
+  if(cards.length===0){ showToast("Keine Karten in dieser Kategorie"); return; }
+
+  if(currentMode==='list'){
+    renderListMode(s, cards);
+    switchScreen('view-session-list');
+    return;
+  }
+  if(currentMode==='mc'){
+    startMultipleChoice(s, cards);
+    return;
+  }
+  // fwd / bwd / rf
+  session = { cards, index:0, flipped:false, mode:currentMode, set:s, wrongCards:[], correctCount:0 };
+  switchScreen('view-session-cards');
+  renderSessionCard();
+}
+window.startSession = startSession;
+
+function exitSession(){
+  renderLearnSetup();
+}
+window.exitSession = exitSession;
+
+/* ---- Karteikarten mode ---- */
+function renderSessionCard(){
+  document.getElementById('cardEditOverlay').classList.remove('show');
+  const { cards, index, mode, set } = session;
+  if(index >= cards.length){
+    if(mode==='rf'){ finishRfRound(); } else { showDone(); }
+    return;
+  }
+  const card = cards[index];
+  const fwd = mode==='fwd' || mode==='rf';
+  const frontLang = fwd ? set.source : set.target;
+  const backLang = fwd ? set.target : set.source;
+  const frontWord = fwd ? card.source : card.target;
+  const backWord = fwd ? card.target : card.source;
+
+  session.flipped = false;
+  session._frontWord = frontWord;
+  session._backWord = backWord;
+  session._frontLangKey = frontLang;
+  session._backLangKey = backLang;
+
+  document.getElementById('sessCount').textContent = `${index+1} / ${cards.length}`;
+  document.getElementById('progressFill').style.width = `${(index/cards.length)*100}%`;
+  document.getElementById('cardFlag').textContent = LANGS[frontLang].flag;
+  document.getElementById('cardWord').textContent = frontWord;
+  document.getElementById('cardSub').textContent = "";
+  document.getElementById('tapInfo').textContent = "Tippen, um Lösung zu zeigen";
+  document.getElementById('flashcard').classList.remove('flipped');
+  document.getElementById('diffRow').style.visibility = 'hidden';
+  document.getElementById('rfFalseBtn').classList.add('hidden');
+  document.getElementById('rfTrueBtn').classList.add('hidden');
+  document.getElementById('diffHint').textContent = '';
+
+  const isRf = mode==='rf';
+  document.getElementById('prevBtn').classList.toggle('hidden', isRf);
+  document.getElementById('nextBtn').classList.toggle('hidden', isRf);
+  document.getElementById('prevBtn').disabled = index===0;
+  document.getElementById('sessStats').classList.toggle('hidden', !isRf);
+  if(isRf){
+    document.getElementById('sessStats').innerHTML = `<span class="ok">✓ ${session.correctCount||0}</span><span class="bad">✗ ${session.wrongCards.length}</span>`;
+  }
+}
+
+function flipCard(){
+  if(session.flipped) return;
+  session.flipped = true;
+  document.getElementById('cardFlag').textContent = LANGS[session._backLangKey].flag;
+  document.getElementById('cardWord').textContent = session._backWord;
+  document.getElementById('cardSub').textContent = `${session._frontWord}`;
+  document.getElementById('tapInfo').textContent = "";
+  document.getElementById('flashcard').classList.add('flipped');
+  if(session.mode==='rf'){
+    document.getElementById('rfFalseBtn').classList.remove('hidden');
+    document.getElementById('rfTrueBtn').classList.remove('hidden');
+    document.getElementById('diffHint').textContent = "Richtig oder falsch beantwortet?";
+  } else {
+    document.getElementById('diffRow').style.visibility = 'visible';
+    document.getElementById('diffHint').textContent = "Wie gut kanntest du dieses Wort?";
+  }
+}
+window.flipCard = flipCard;
+
+function rateCard(level){
+  const card = session.cards[session.index];
+  const s = session.set;
+  const realCard = s.cards.find(c=>c.id===card.id);
+  if(realCard){ realCard.difficulty = level; persist(); }
+  nextCard();
+}
+window.rateCard = rateCard;
+
+function rateRf(isCorrect){
+  const card = session.cards[session.index];
+  if(isCorrect){
+    session.correctCount = (session.correctCount||0) + 1;
+  } else {
+    session.wrongCards.push(card);
+  }
+  document.getElementById('sessStats').innerHTML = `<span class="ok">✓ ${session.correctCount||0}</span><span class="bad">✗ ${session.wrongCards.length}</span>`;
+  nextCard();
+}
+window.rateRf = rateRf;
+
+function finishRfRound(){
+  const wrongCount = session.wrongCards.length;
+  const correctCount = session.correctCount || 0;
+  const total = correctCount + wrongCount;
+  if(wrongCount === 0){
+    document.getElementById('doneSummary').textContent = `${total} von ${total} richtig – stark!`;
+    switchScreen('view-session-done');
+    return;
+  }
+  showTwoChoice(
+    `${correctCount} richtig, ${wrongCount} falsch. Die ${wrongCount} falschen Karten nochmal lernen?`,
+    'Ja, nochmal',
+    'Nein, fertig',
+    ()=>{
+      const nextRoundCards = shuffle(session.wrongCards);
+      const setRef = session.set;
+      session = { cards: nextRoundCards, index:0, flipped:false, mode:'rf', set: setRef, wrongCards:[], correctCount:0 };
+      switchScreen('view-session-cards');
+      renderSessionCard();
+    },
+    ()=>{
+      document.getElementById('doneSummary').textContent = `${correctCount} von ${total} richtig.`;
+      switchScreen('view-session-done');
+    }
+  );
+}
+
+function nextCard(){
+  if(session.index < session.cards.length){
+    session.index++;
+    renderSessionCard();
+  }
+}
+window.nextCard = nextCard;
+
+function prevCard(){
+  if(session.index > 0){
+    session.index--;
+    renderSessionCard();
+  }
+}
+window.prevCard = prevCard;
+
+function openCardEditor(){
+  const card = session.cards[session.index];
+  const s = session.set;
+  if(!card || !s) return;
+  document.getElementById('cardEditFlagSrc').textContent = LANGS[s.source].flag;
+  document.getElementById('cardEditLangSrc').textContent = LANGS[s.source].name;
+  document.getElementById('cardEditFlagTgt').textContent = LANGS[s.target].flag;
+  document.getElementById('cardEditLangTgt').textContent = LANGS[s.target].name;
+  document.getElementById('cardEditSource').value = card.source;
+  document.getElementById('cardEditTarget').value = card.target;
+  document.getElementById('cardEditOverlay').classList.add('show');
+}
+window.openCardEditor = openCardEditor;
+
+function closeCardEditor(){
+  document.getElementById('cardEditOverlay').classList.remove('show');
+}
+window.closeCardEditor = closeCardEditor;
+
+function saveCardEditFromSession(){
+  const card = session.cards[session.index];
+  if(!card) return;
+  const src = document.getElementById('cardEditSource').value.trim();
+  const tgt = document.getElementById('cardEditTarget').value.trim();
+  if(!src || !tgt){ showToast("Bitte beide Wörter ausfüllen"); return; }
+  card.source = src;
+  card.target = tgt;
+  persist();
+  closeCardEditor();
+  renderSessionCard();
+  showToast("Gespeichert");
+}
+window.saveCardEditFromSession = saveCardEditFromSession;
+
+function deleteCardFromSession(){
+  const card = session.cards[session.index];
+  const s = session.set;
+  if(!card || !s) return;
+  showConfirm(`Wort "${card.source}" wirklich löschen?`, ()=>{
+    s.cards = s.cards.filter(c=>c.id!==card.id);
+    session.cards.splice(session.index, 1);
+    persist();
+    closeCardEditor();
+    if(session.cards.length===0){ showDone(); return; }
+    if(session.index >= session.cards.length){ session.index = session.cards.length - 1; }
+    renderSessionCard();
+    showToast("Wort gelöscht");
+  });
+}
+window.deleteCardFromSession = deleteCardFromSession;
+
+function speakCurrent(){
+  if(!('speechSynthesis' in window)) { showToast("Sprachausgabe nicht verfügbar"); return; }
+  const text = session.flipped ? session._backWord : session._frontWord;
+  const langKey = session.flipped ? session._backLangKey : session._frontLangKey;
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = getSpeechLangCode(langKey);
+  utter.rate = speechSettings.rate;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utter);
+}
+window.speakCurrent = speakCurrent;
+
+function showDone(){
+  document.getElementById('doneSummary').textContent = `Du hast ${session.cards.length} Karten durchgearbeitet.`;
+  switchScreen('view-session-done');
+}
+
+/* ---- Liste mode ---- */
+function renderListMode(s, cards){
+  const c = document.getElementById('listModeContainer');
+  c.innerHTML = cards.map(card=>`
+    <div class="list-mode-item">
+      <div class="side">${escapeHtml(card.source)}</div>
+      <div class="arrow">→</div>
+      <div class="side target">${escapeHtml(card.target)}</div>
+    </div>`).join('');
+}
+
+/* ---- Multiple Choice mode ---- */
+function startMultipleChoice(s, cards){
+  mcState = { pool: cards, index:0, correct:0, wrong:0, locked:false, set:s };
+  switchScreen('view-session-mc');
+  renderMcQuestion();
+}
+
+function renderMcQuestion(){
+  const { pool, index, set } = mcState;
+  if(index >= pool.length){
+    document.getElementById('doneSummary').textContent = `${mcState.correct} von ${pool.length} richtig beantwortet.`;
+    switchScreen('view-session-done');
+    return;
+  }
+  mcState.locked = false;
+  document.getElementById('mcNextBtn').classList.add('hidden');
+  const card = pool[index];
+  document.getElementById('mcCount').textContent = `${index+1} / ${pool.length}`;
+  document.getElementById('mcProgressFill').style.width = `${(index/pool.length)*100}%`;
+  document.getElementById('mcStats').innerHTML = `<span class="ok">✓ ${mcState.correct}</span><span class="bad">✗ ${mcState.wrong}</span>`;
+  document.getElementById('mcFlag').textContent = LANGS[set.source].flag;
+  document.getElementById('mcWord').textContent = card.source;
+
+  const wrongCards = shuffle(pool.filter(c=>c.id!==card.id)).slice(0,3);
+  const optionCards = shuffle([card, ...wrongCards]);
+  mcState._optionCards = optionCards;
+  mcState._correctCard = card;
+
+  const box = document.getElementById('mcOptions');
+  box.innerHTML = optionCards.map((c,i)=>`<button class="mc-opt" data-opt-index="${i}"><span class="opt-main">${escapeHtml(c.target)}</span><span class="opt-sub hidden"></span></button>`).join('');
+  box.querySelectorAll('.mc-opt').forEach((btn,i)=>{
+    btn.addEventListener('click', ()=> answerMc(i));
+  });
+}
+
+function answerMc(chosenIndex){
+  if(mcState.locked) return;
+  mcState.locked = true;
+  const optionCards = mcState._optionCards;
+  const correctCard = mcState._correctCard;
+  const chosenCard = optionCards[chosenIndex];
+  const isCorrect = chosenCard.id === correctCard.id;
+  const buttons = document.querySelectorAll('#mcOptions .mc-opt');
+
+  buttons.forEach((b, i)=>{
+    b.disabled = true;
+    const c = optionCards[i];
+    if(c.id === correctCard.id){
+      b.classList.add('correct');
+    } else if(!isCorrect){
+      b.classList.add('wrong-option');
+      const sub = b.querySelector('.opt-sub');
+      sub.textContent = `→ ${c.source}`;
+      sub.classList.remove('hidden');
+    }
+    if(i === chosenIndex && !isCorrect) b.classList.add('wrong');
+  });
+
+  if(isCorrect){
+    mcState.correct++;
+    document.getElementById('mcStats').innerHTML = `<span class="ok">✓ ${mcState.correct}</span><span class="bad">✗ ${mcState.wrong}</span>`;
+    setTimeout(()=> mcAdvance(), 900);
+  } else {
+    mcState.wrong++;
+    document.getElementById('mcStats').innerHTML = `<span class="ok">✓ ${mcState.correct}</span><span class="bad">✗ ${mcState.wrong}</span>`;
+    document.getElementById('mcNextBtn').classList.remove('hidden');
+  }
+}
+window.answerMc = answerMc;
+
+function mcAdvance(){
+  document.getElementById('mcNextBtn').classList.add('hidden');
+  mcState.index++;
+  renderMcQuestion();
+}
+window.mcAdvance = mcAdvance;
+
+/* ============ INIT ============ */
+function render(){
+  if(document.getElementById('view-edit-list').classList.contains('active')) renderSetList();
+  if(document.getElementById('view-set-detail').classList.contains('active')) renderCardList();
+  if(document.getElementById('view-learn-setup').classList.contains('active')) renderLearnSetup();
+}
+
+// override go for learn-setup entry point
+function go(id){
+  try{
+    if(id === 'view-learn-setup'){ openLearnSetup(); return; }
+    if(id === 'view-settings'){ renderTrash(); switchScreen(id); return; }
+    if(id === 'view-duplicates'){ renderDuplicates(); switchScreen(id); return; }
+    if(id === 'view-spellcheck'){ spellCheckResults=[]; document.getElementById('spellCheckContainer').innerHTML=''; switchScreen(id); return; }
+    switchScreen(id);
+  }catch(err){
+    console.error('Fehler in go():', err);
+    showToast('Fehler beim Öffnen: ' + err.message);
+  }
+}
+window.go = go;
+
+loadLocal();
+loadSpeechSettings();
+render();
+initFirebaseSync();
+</script>
+</body>
+</html>
