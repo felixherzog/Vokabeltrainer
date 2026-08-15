@@ -1518,7 +1518,7 @@ function cycleDifficulty(cardId){
   if(!s) return;
   const card = s.cards.find(c=>c.id===cardId);
   if(!card) return;
-  const order = ['neu','leicht','mittel','schwer'];
+  const order = ['neu','schwer','mittel','leicht'];
   const current = card.difficulty || 'neu';
   const next = order[(order.indexOf(current)+1) % order.length];
   card.difficulty = next;
