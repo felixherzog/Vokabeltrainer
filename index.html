@@ -611,6 +611,11 @@
       <div class="pill-row" id="categoryPills" style="padding:0 0 26px;"></div>
     </div>
 
+    <div class="section-label">Anzahl</div>
+    <div class="card-box" style="padding:0;background:none;border:none;">
+      <div class="pill-row" id="countPills" style="padding:0 0 26px;"></div>
+    </div>
+
     <div class="section-label">Lernmodus</div>
     <div class="card-box" id="modeListBox"></div>
 
@@ -1153,6 +1158,7 @@ let setLangFilter = 'alle';
 let editLangFilter = 'alle';
 let currentCategory = "alle";
 let currentMode = null; // 'fwd' | 'bwd' | 'list' | 'mc'
+let countFilter = "alle"; // 'alle' | '5' | '10' | '15' | '20'
 let newSetSource = "DE";
 let newSetTarget = "ES";
 
@@ -2242,8 +2248,12 @@ window.cycleSet = cycleSet;
 function getFilteredCards(){
   const s = getSet(currentSetId);
   if(!s) return [];
-  if(currentCategory==='alle') return s.cards;
-  return s.cards.filter(c => (c.difficulty||'neu') === currentCategory);
+  let cards = currentCategory==='alle' ? s.cards : s.cards.filter(c => (c.difficulty||'neu') === currentCategory);
+  if(countFilter !== 'alle'){
+    const n = parseInt(countFilter, 10);
+    cards = cards.slice(0, n);
+  }
+  return cards;
 }
 
 function renderSetSelector(s){
@@ -2291,6 +2301,13 @@ function renderLearnSetup(){
     return `<button class="pill ${active}" onclick="selectCategory('${cat}')">${label} (${counts[cat]})</button>`;
   }).join('');
 
+  const countBox = document.getElementById('countPills');
+  countBox.innerHTML = ['alle','5','10','15','20'].map(c=>{
+    const label = c==='alle' ? 'Alle' : c;
+    const active = countFilter===c ? 'active' : '';
+    return `<button class="pill ${active}" onclick="selectCountFilter('${c}')">${label}</button>`;
+  }).join('');
+
   const filtered = getFilteredCards();
   const n = filtered.length;
   const mcDisabled = n < 4;
@@ -2323,6 +2340,12 @@ function selectCategory(cat){
   renderLearnSetup();
 }
 window.selectCategory = selectCategory;
+
+function selectCountFilter(c){
+  countFilter = c;
+  renderLearnSetup();
+}
+window.selectCountFilter = selectCountFilter;
 
 function selectMode(mode){
   currentMode = mode;
