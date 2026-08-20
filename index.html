@@ -393,7 +393,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 2026-08-20 17:15</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 2026-08-20 18:00 (Reparatur-Modus)</div>
   </div>
 
   <!-- HOME -->
@@ -1016,6 +1016,7 @@ async function submitPinCreate(){
   }
 
   let initialData = { learnSets: [], deletedSets: [], lastUsedSetId: null };
+  let repairMode = false;
 
   // SICHERHEITSPRÜFUNG: Existiert das Profil in der Datenbank bereits mit einer PIN,
   // obwohl unsere lokale Liste das nicht wusste? Dann NICHT überschreiben, sondern
@@ -1033,6 +1034,14 @@ async function submitPinCreate(){
           showToast('Dieses Profil hat bereits eine PIN – bitte eingeben statt neu erstellen');
           selectProfile(profile.id);
           return;
+        }
+        // Dokument existiert bereits mit Daten, aber ohne PIN (z.B. durch früheren Fehler) –
+        // REPARATUR: vorhandene Daten übernehmen, nur die PIN neu setzen, NICHTS löschen.
+        if(Array.isArray(freshData.learnSets) && freshData.learnSets.length > 0){
+          initialData.learnSets = freshData.learnSets;
+          initialData.deletedSets = Array.isArray(freshData.deletedSets) ? freshData.deletedSets : [];
+          initialData.lastUsedSetId = freshData.lastUsedSetId || null;
+          repairMode = true;
         }
       }
     }catch(e){ console.error('Sicherheitsprüfung fehlgeschlagen:', e); }
@@ -1077,6 +1086,7 @@ async function submitPinCreate(){
   try{ localStorage.setItem('vokabeltrainer_profiles_cache', JSON.stringify(profilesList)); }catch(e){}
 
   document.getElementById('pinCreateOverlay').classList.remove('show');
+  if(repairMode){ showToast(`PIN gesetzt – ${initialData.learnSets.length} bestehende Lernsets erhalten`); }
   await enterProfile(profile.id, profile.name);
 }
 window.submitPinCreate = submitPinCreate;
@@ -1364,7 +1374,7 @@ function persist(){
       lastUsedSetId: appData.lastUsedSetId||null,
       speechSettings: speechSettings,
       updatedAt: Date.now()
-    })
+    }, { merge: true })
       .then(()=> setSyncStatus('ok'))
       .catch(err=>{ console.error(err); setSyncStatus('off'); });
   }, 500);
