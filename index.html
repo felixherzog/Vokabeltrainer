@@ -1015,6 +1015,28 @@ async function submitPinCreate(){
   }
 
   let initialData = { learnSets: [], deletedSets: [], lastUsedSetId: null };
+
+  // SICHERHEITSPRÜFUNG: Existiert das Profil in der Datenbank bereits mit einer PIN,
+  // obwohl unsere lokale Liste das nicht wusste? Dann NICHT überschreiben, sondern
+  // zur PIN-Eingabe umleiten, um Datenverlust zu verhindern.
+  if(firebaseReady){
+    try{
+      const freshSnap = await fsGetDoc(fsDoc(db, 'vokabeltrainer_profiles', profile.id));
+      if(freshSnap.exists()){
+        const freshData = freshSnap.data();
+        if(freshData.pinHash){
+          const entry = profilesList.find(p=>p.id===profile.id);
+          if(entry){ entry.pinHash = freshData.pinHash; entry.exists = true; }
+          try{ localStorage.setItem('vokabeltrainer_profiles_cache', JSON.stringify(profilesList)); }catch(e){}
+          document.getElementById('pinCreateOverlay').classList.remove('show');
+          showToast('Dieses Profil hat bereits eine PIN – bitte eingeben statt neu erstellen');
+          selectProfile(profile.id);
+          return;
+        }
+      }
+    }catch(e){ console.error('Sicherheitsprüfung fehlgeschlagen:', e); }
+  }
+
   // Migration: bestehende alte Daten (vor Profil-System) für "felix" übernehmen
   if(profile.id === 'felix' && firebaseReady){
     try{
@@ -1046,6 +1068,13 @@ async function submitPinCreate(){
       return;
     }
   }
+  // Lokale Liste sofort aktualisieren, damit ein erneuter Wechsel in dieser Sitzung
+  // korrekt "PIN eingeben" statt "PIN erstellen" anzeigt.
+  const listEntry = profilesList.find(p=>p.id===profile.id);
+  if(listEntry){ listEntry.pinHash = hash; listEntry.exists = true; }
+  else{ profilesList.push({ id: profile.id, name: profile.name, pinHash: hash, exists: true }); }
+  try{ localStorage.setItem('vokabeltrainer_profiles_cache', JSON.stringify(profilesList)); }catch(e){}
+
   document.getElementById('pinCreateOverlay').classList.remove('show');
   await enterProfile(profile.id, profile.name);
 }
@@ -1093,13 +1122,18 @@ function adminResetPin(profileId){
 window.adminResetPin = adminResetPin;
 
 
-function switchProfile(){
+async function switchProfile(){
   if(unsubscribeProfile){ unsubscribeProfile(); unsubscribeProfile = null; }
   try{ localStorage.removeItem(ACTIVE_PROFILE_KEY); }catch(e){}
   currentProfileId = null;
   currentProfileName = null;
-  renderProfileList();
   switchScreen('view-profile-select');
+  if(firebaseReady){
+    await loadProfilesList();
+  } else {
+    loadProfilesListFromCache();
+  }
+  renderProfileList();
 }
 window.switchProfile = switchProfile;
 
