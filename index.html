@@ -300,12 +300,27 @@
   .mc-stats .bad{color:var(--red);}
 
   /* list mode */
-  .list-mode-item{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 4px;
+  .list-mode-item{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:16px 4px;
     border-bottom:1px solid var(--border);}
   .list-mode-item:last-child{border-bottom:none;}
   .list-mode-item .side{flex:1;font-size:15px;font-weight:600;}
   .list-mode-item .side.target{color:var(--green);text-align:right;}
-  .list-mode-item .arrow{color:var(--text-dim);font-size:13px;flex-shrink:0;}
+  .list-mode-item .arrow{color:var(--text-dim);font-size:13px;flex-shrink:0;margin-top:2px;}
+  .list-mode-item .side .w-example{text-align:inherit;}
+
+  #printArea{display:none;}
+  @media print{
+    body > *{ display:none !important; }
+    #printArea{ display:block !important; }
+    #printArea *{ display:revert !important; }
+    @page{ size:A4; margin:2cm; }
+    #printArea{ color:#000; background:#fff; font-family:-apple-system,sans-serif; }
+    #printArea h1{ font-size:20px;margin:0 0 20px; }
+    #printArea .p-row{ display:flex; justify-content:space-between; gap:20px; padding:10px 0; border-bottom:1px solid #ccc; }
+    #printArea .p-col{ flex:1; }
+    #printArea .p-word{ font-weight:700;font-size:14px; }
+    #printArea .p-example{ font-size:11px;color:#555;font-style:italic;margin-top:2px; }
+  }
 
   .done-wrap{text-align:center;padding:50px 20px;}
   .done-wrap .ic{font-size:56px;margin-bottom:16px;}
@@ -417,7 +432,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 2026-08-21 12:30 (Sprachfilter kompakt)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 2026-08-21 12:50 (Liste-Beispiele + Drucken)</div>
   </div>
 
   <!-- HOME -->
@@ -444,7 +459,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 2026-08-21 12:30 (Sprachfilter kompakt)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 2026-08-21 12:50 (Liste-Beispiele + Drucken)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
@@ -732,10 +747,11 @@
     <div class="topbar">
       <div class="backbtn" onclick="exitSession()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg></div>
       <h1>Liste</h1>
-      <div class="spacer"></div>
+      <div class="backbtn" onclick="printList()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg></div>
     </div>
     <div class="card-box"><div id="listModeContainer"></div></div>
   </div>
+  <div id="printArea"></div>
 
   <!-- LERNEN: Multiple Choice -->
   <div class="screen" id="view-session-mc">
@@ -2848,15 +2864,44 @@ function showDone(){
 }
 
 /* ---- Liste mode ---- */
+let lastListCards = [];
+let lastListSet = null;
+
 function renderListMode(s, cards){
+  lastListCards = cards;
+  lastListSet = s;
   const c = document.getElementById('listModeContainer');
-  c.innerHTML = cards.map(card=>`
-    <div class="list-mode-item">
-      <div class="side">${escapeHtml(card.source)}</div>
+  c.innerHTML = cards.map(card=>{
+    const exSrc = card.exampleSource ? `<div class="w-example">${escapeHtml(card.exampleSource)}</div>` : '';
+    const exTgt = card.exampleTarget ? `<div class="w-example">${escapeHtml(card.exampleTarget)}</div>` : '';
+    return `<div class="list-mode-item">
+      <div class="side">${escapeHtml(card.source)}${exSrc}</div>
       <div class="arrow">→</div>
-      <div class="side target">${escapeHtml(card.target)}</div>
-    </div>`).join('');
+      <div class="side target">${escapeHtml(card.target)}${exTgt}</div>
+    </div>`;
+  }).join('');
 }
+
+function printList(){
+  if(!lastListSet || lastListCards.length===0){ showToast("Keine Liste zum Drucken"); return; }
+  const s = lastListSet;
+  const srcName = LANGS[s.source].name;
+  const tgtName = LANGS[s.target].name;
+  const rowsHtml = lastListCards.map(card=>{
+    const exSrc = card.exampleSource ? `<div class="p-example">${escapeHtml(card.exampleSource)}</div>` : '';
+    const exTgt = card.exampleTarget ? `<div class="p-example">${escapeHtml(card.exampleTarget)}</div>` : '';
+    return `<div class="p-row">
+      <div class="p-col"><div class="p-word">${escapeHtml(card.source)}</div>${exSrc}</div>
+      <div class="p-col"><div class="p-word">${escapeHtml(card.target)}</div>${exTgt}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('printArea').innerHTML = `
+    <h1>${escapeHtml(s.name)} (${srcName} → ${tgtName})</h1>
+    ${rowsHtml}
+  `;
+  window.print();
+}
+window.printList = printList;
 
 /* ---- Multiple Choice mode ---- */
 function startMultipleChoice(s, cards){
