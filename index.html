@@ -20,6 +20,7 @@
     --green-dim:#1f8a3c;
     --red:#ff4d4f;
     --amber:#ffb020;
+    --blue:#0a84ff;
     --radius-lg:20px;
     --radius-md:14px;
     --safe-top:env(safe-area-inset-top);
@@ -120,7 +121,7 @@
     padding:7px 10px;color:var(--text);font-size:13px;font-weight:600;font-family:inherit;flex-shrink:0;
     width:150px;}
   .card-diff-filter.sel-alle{background:rgba(48,209,88,.10);border-color:var(--green-dim);color:var(--green);}
-  .card-diff-filter.sel-neu{background:rgba(154,154,161,.16);border-color:var(--text-dim);color:var(--text);}
+  .card-diff-filter.sel-neu{background:rgba(10,132,255,.16);border-color:var(--blue);color:var(--blue);}
   .card-diff-filter.sel-leicht{background:rgba(48,209,88,.16);border-color:var(--green);color:var(--green);}
   .card-diff-filter.sel-mittel{background:rgba(255,176,32,.16);border-color:var(--amber);color:var(--amber);}
   .card-diff-filter.sel-schwer{background:rgba(255,77,79,.16);border-color:var(--red);color:var(--red);}
@@ -130,7 +131,7 @@
   .pill{padding:10px 16px;border-radius:12px;border:1px solid var(--border);background:transparent;
     color:var(--text);font-size:14px;font-weight:600;cursor:pointer;}
   .pill.active{background:rgba(48,209,88,.16);border-color:var(--green-dim);color:var(--green);}
-  .pill.active.pill-neu{background:rgba(154,154,161,.16);border-color:var(--text-dim);color:var(--text);}
+  .pill.active.pill-neu{background:rgba(10,132,255,.16);border-color:var(--blue);color:var(--blue);}
   .pill.active.pill-leicht{background:rgba(48,209,88,.16);border-color:var(--green);color:var(--green);}
   .pill.active.pill-mittel{background:rgba(255,176,32,.16);border-color:var(--amber);color:var(--amber);}
   .pill.active.pill-schwer{background:rgba(255,77,79,.16);border-color:var(--red);color:var(--red);}
@@ -218,7 +219,7 @@
   .diff-badge.leicht{background:rgba(48,209,88,.16);color:var(--green);}
   .diff-badge.mittel{background:rgba(255,176,32,.16);color:var(--amber);}
   .diff-badge.schwer{background:rgba(255,77,79,.16);color:var(--red);}
-  .diff-badge.neu{background:var(--panel-2);color:var(--text-dim);}
+  .diff-badge.neu{background:rgba(10,132,255,.16);color:var(--blue);}
   .del-btn{width:28px;height:28px;border-radius:50%;background:var(--panel-2);border:1px solid var(--border);
     color:var(--text-dim);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
   .del-btn svg{width:12px;height:12px;}
@@ -407,7 +408,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 2026-08-21 10:45 (Konsistente Ausrichtung)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 2026-08-21 11:00 (Neu = Blau)</div>
   </div>
 
   <!-- HOME -->
@@ -434,7 +435,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 2026-08-21 10:45 (Konsistente Ausrichtung)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 2026-08-21 11:00 (Neu = Blau)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
@@ -2410,7 +2411,7 @@ function renderLearnSetup(){
   const catBox = document.getElementById('categoryPills');
   catBox.innerHTML = ['alle','neu','leicht','mittel','schwer'].map(cat=>{
     const label = cat==='alle' ? 'Alle' : cat.charAt(0).toUpperCase()+cat.slice(1);
-    const active = currentCategory===cat ? 'active' : '';
+    const active = currentCategory===cat ? `active pill-${cat}` : '';
     return `<button class="pill ${active}" onclick="selectCategory('${cat}')">${label} (${counts[cat]})</button>`;
   }).join('');
 
