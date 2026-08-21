@@ -119,12 +119,20 @@
   .card-diff-filter{background:var(--panel-2);border:1px solid var(--border);border-radius:10px;
     padding:7px 10px;color:var(--text);font-size:13px;font-weight:600;font-family:inherit;flex-shrink:0;
     width:150px;}
+  .card-diff-filter.sel-neu{background:var(--panel-2);border-color:var(--border);color:var(--text-dim);}
+  .card-diff-filter.sel-leicht{background:rgba(48,209,88,.16);border-color:var(--green);color:var(--green);}
+  .card-diff-filter.sel-mittel{background:rgba(255,176,32,.16);border-color:var(--amber);color:var(--amber);}
+  .card-diff-filter.sel-schwer{background:rgba(255,77,79,.16);border-color:var(--red);color:var(--red);}
 
   /* pills row */
   .pill-row{display:flex;gap:10px;flex-wrap:wrap;padding:14px;}
   .pill{padding:10px 16px;border-radius:12px;border:1px solid var(--border);background:transparent;
     color:var(--text);font-size:14px;font-weight:600;cursor:pointer;}
   .pill.active{background:rgba(48,209,88,.16);border-color:var(--green-dim);color:var(--green);}
+  .pill.active.pill-neu{background:var(--panel-2);border-color:var(--border);color:var(--text-dim);}
+  .pill.active.pill-leicht{background:rgba(48,209,88,.16);border-color:var(--green);color:var(--green);}
+  .pill.active.pill-mittel{background:rgba(255,176,32,.16);border-color:var(--amber);color:var(--amber);}
+  .pill.active.pill-schwer{background:rgba(255,77,79,.16);border-color:var(--red);color:var(--red);}
   .pill:disabled{opacity:.35;}
 
   /* mode list */
@@ -139,6 +147,11 @@
     display:flex;align-items:center;justify-content:center;}
   .radio.checked{background:var(--green);border-color:var(--green);}
   .radio.checked svg{width:13px;height:13px;color:#00230d;}
+
+  .checkbox-toggle{width:24px;height:24px;border-radius:7px;border:2px solid var(--border);flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;margin-right:2px;}
+  .checkbox-toggle.checked{background:var(--green);border-color:var(--green);}
+  .checkbox-toggle.checked svg{width:13px;height:13px;color:#00230d;}
 
   .btn-primary{width:100%;background:var(--green);color:#00230d;border:none;border-radius:18px;
     padding:18px;font-size:17px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;
@@ -393,7 +406,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 2026-08-20 18:00 (Reparatur-Modus)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 2026-08-20 19:20 (Farbige Filter)</div>
   </div>
 
   <!-- HOME -->
@@ -420,7 +433,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 2026-08-20 18:00 (Reparatur-Modus)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 2026-08-20 19:20 (Farbige Filter)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
@@ -609,14 +622,28 @@
     <div class="section-label">Lernset</div>
     <div class="card-box" style="padding:0;background:none;border:none;margin-bottom:26px;" id="setSelectorContainer"></div>
 
-    <div class="section-label">Kategorie</div>
+    <div class="section-label">Auswahl</div>
     <div class="card-box" style="padding:0;background:none;border:none;">
-      <div class="pill-row" id="categoryPills" style="padding:0 0 26px;"></div>
+      <div class="pill-row" id="selectionModePills" style="padding:0 0 16px;"></div>
     </div>
 
-    <div class="section-label">Anzahl</div>
-    <div class="card-box" style="padding:0;background:none;border:none;">
-      <div class="pill-row" id="countPills" style="padding:0 0 26px;"></div>
+    <div id="categoryCountWrap">
+      <div class="section-label">Kategorie</div>
+      <div class="card-box" style="padding:0;background:none;border:none;">
+        <div class="pill-row" id="categoryPills" style="padding:0 0 26px;"></div>
+      </div>
+
+      <div class="section-label">Anzahl</div>
+      <div class="card-box" style="padding:0;background:none;border:none;">
+        <div class="pill-row" id="countPills" style="padding:0 0 26px;"></div>
+      </div>
+    </div>
+
+    <div id="manualSummaryWrap" class="hidden">
+      <div class="card-box" style="padding:18px;margin-bottom:26px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+        <div style="font-size:15px;font-weight:700;" id="manualSummaryText">0 Wörter ausgewählt</div>
+        <button class="btn-ghost" onclick="openManualSelect()">Auswahl bearbeiten</button>
+      </div>
     </div>
 
     <div class="section-label">Lernmodus</div>
@@ -626,6 +653,22 @@
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
       Start
     </button>
+  </div>
+
+  <!-- WÖRTER MANUELL AUSWÄHLEN -->
+  <div class="screen" id="view-manual-select">
+    <div class="topbar">
+      <div class="backbtn" onclick="closeManualSelect()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></div>
+      <h1>Wörter auswählen</h1>
+      <div class="spacer"></div>
+    </div>
+    <div id="manualCategoryFilterContainer"></div>
+    <div style="display:flex;gap:10px;margin-bottom:18px;">
+      <button class="btn-secondary" style="padding:12px;" onclick="manualSelectAll()">Alle auswählen</button>
+      <button class="btn-secondary" style="padding:12px;" onclick="manualSelectNone()">Keine auswählen</button>
+    </div>
+    <div class="card-box"><div id="manualListContainer"></div></div>
+    <button class="btn-primary" style="margin-top:20px;" onclick="closeManualSelect()">Fertig</button>
   </div>
 
   <!-- LERNEN: Karteikarten-Session -->
@@ -1208,6 +1251,9 @@ let editLangFilter = 'alle';
 let currentCategory = "alle";
 let currentMode = null; // 'fwd' | 'bwd' | 'list' | 'mc'
 let countFilter = "alle"; // 'alle' | '5' | '10' | '15' | '20'
+let manualMode = false;
+let manualSelections = {}; // { [setId]: [cardId, cardId, ...] }
+let manualFilterCategory = 'alle';
 let newSetSource = "DE";
 let newSetTarget = "ES";
 
@@ -1973,7 +2019,7 @@ function renderCardDifficultyFilter(){
     { v:'alle', l:'Alle' }, { v:'neu', l:'Neu' }, { v:'leicht', l:'Leicht' },
     { v:'mittel', l:'Mittel' }, { v:'schwer', l:'Schwer' }
   ];
-  container.innerHTML = `<select class="card-diff-filter" onchange="selectCardDifficultyFilter(this.value)">
+  container.innerHTML = `<select class="card-diff-filter sel-${cardDifficultyFilter}" onchange="selectCardDifficultyFilter(this.value)">
     ${options.map(o=>`<option value="${o.v}" ${cardDifficultyFilter===o.v?'selected':''}>${o.l} (${counts[o.v]})</option>`).join('')}
   </select>`;
 }
@@ -2297,6 +2343,10 @@ window.cycleSet = cycleSet;
 function getFilteredCards(){
   const s = getSet(currentSetId);
   if(!s) return [];
+  if(manualMode){
+    const selected = manualSelections[currentSetId] || [];
+    return s.cards.filter(c => selected.includes(c.id));
+  }
   let cards = currentCategory==='alle' ? s.cards : s.cards.filter(c => (c.difficulty||'neu') === currentCategory);
   if(countFilter !== 'alle'){
     const n = parseInt(countFilter, 10);
@@ -2334,6 +2384,18 @@ function renderSetSelector(s){
 function renderLearnSetup(){
   const s = getSet(currentSetId);
   renderSetSelector(s);
+
+  const selModeBox = document.getElementById('selectionModePills');
+  selModeBox.innerHTML = `
+    <button class="pill ${!manualMode?'active':''}" onclick="setManualMode(false)">Kategorie/Anzahl</button>
+    <button class="pill ${manualMode?'active':''}" onclick="setManualMode(true)">Manuell</button>
+  `;
+  document.getElementById('categoryCountWrap').classList.toggle('hidden', manualMode);
+  document.getElementById('manualSummaryWrap').classList.toggle('hidden', !manualMode);
+  if(manualMode){
+    const selected = (s && manualSelections[s.id]) || [];
+    document.getElementById('manualSummaryText').textContent = `${selected.length} Wort${selected.length===1?'':'e'} ausgewählt`;
+  }
 
   const all = s ? s.cards : [];
   const counts = {
@@ -2395,6 +2457,105 @@ function selectCountFilter(c){
   renderLearnSetup();
 }
 window.selectCountFilter = selectCountFilter;
+
+function setManualMode(on){
+  manualMode = on;
+  renderLearnSetup();
+}
+window.setManualMode = setManualMode;
+
+/* ---- Wörter manuell auswählen ---- */
+function openManualSelect(){
+  manualFilterCategory = 'alle';
+  renderManualSelectScreen();
+  switchScreen('view-manual-select');
+}
+window.openManualSelect = openManualSelect;
+
+function closeManualSelect(){
+  switchScreen('view-learn-setup');
+  renderLearnSetup();
+}
+window.closeManualSelect = closeManualSelect;
+
+function renderManualCategoryFilter(){
+  const container = document.getElementById('manualCategoryFilterContainer');
+  const s = getSet(currentSetId);
+  const all = s ? s.cards : [];
+  const counts = {
+    alle: all.length,
+    neu: all.filter(c=>!c.difficulty || c.difficulty==='neu').length,
+    leicht: all.filter(c=>c.difficulty==='leicht').length,
+    mittel: all.filter(c=>c.difficulty==='mittel').length,
+    schwer: all.filter(c=>c.difficulty==='schwer').length,
+  };
+  container.innerHTML = `<div class="pill-row" style="padding:0 0 18px;">${['alle','neu','leicht','mittel','schwer'].map(cat=>{
+    const label = cat==='alle' ? 'Alle' : cat.charAt(0).toUpperCase()+cat.slice(1);
+    const active = manualFilterCategory===cat ? `active pill-${cat}` : '';
+    return `<button class="pill ${active}" onclick="selectManualCategoryFilter('${cat}')">${label} (${counts[cat]})</button>`;
+  }).join('')}</div>`;
+}
+
+function selectManualCategoryFilter(cat){
+  manualFilterCategory = cat;
+  renderManualSelectScreen();
+}
+window.selectManualCategoryFilter = selectManualCategoryFilter;
+
+function renderManualSelectScreen(){
+  renderManualCategoryFilter();
+  const s = getSet(currentSetId);
+  const container = document.getElementById('manualListContainer');
+  if(!s){ container.innerHTML = ''; return; }
+  const selected = manualSelections[s.id] || [];
+  const visible = manualFilterCategory==='alle' ? s.cards : s.cards.filter(c => (c.difficulty||'neu')===manualFilterCategory);
+  if(visible.length===0){
+    container.innerHTML = `<div class="empty" style="padding:30px 16px;"><div class="ic">🔍</div><p>Keine Wörter für diesen Filter</p></div>`;
+    return;
+  }
+  container.innerHTML = visible.slice().reverse().map(card=>{
+    const diff = card.difficulty || 'neu';
+    const checked = selected.includes(card.id);
+    return `<div class="card-list-item">
+      <div class="checkbox-toggle ${checked?'checked':''}" onclick="toggleManualCard('${card.id}')">${checked?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>':''}</div>
+      <div class="words" onclick="toggleManualCard('${card.id}')"><div class="w1">${escapeHtml(card.source)}</div><div class="w2">${escapeHtml(card.target)}</div></div>
+      <span class="diff-badge ${diff}">${diff}</span>
+    </div>`;
+  }).join('');
+}
+
+function toggleManualCard(cardId){
+  const s = getSet(currentSetId);
+  if(!s) return;
+  if(!manualSelections[s.id]) manualSelections[s.id] = [];
+  const arr = manualSelections[s.id];
+  const idx = arr.indexOf(cardId);
+  if(idx === -1) arr.push(cardId); else arr.splice(idx,1);
+  renderManualSelectScreen();
+}
+window.toggleManualCard = toggleManualCard;
+
+function manualSelectAll(){
+  const s = getSet(currentSetId);
+  if(!s) return;
+  const visible = manualFilterCategory==='alle' ? s.cards : s.cards.filter(c => (c.difficulty||'neu')===manualFilterCategory);
+  if(!manualSelections[s.id]) manualSelections[s.id] = [];
+  const arr = manualSelections[s.id];
+  visible.forEach(c=>{ if(!arr.includes(c.id)) arr.push(c.id); });
+  renderManualSelectScreen();
+}
+window.manualSelectAll = manualSelectAll;
+
+function manualSelectNone(){
+  const s = getSet(currentSetId);
+  if(!s) return;
+  const visible = manualFilterCategory==='alle' ? s.cards : s.cards.filter(c => (c.difficulty||'neu')===manualFilterCategory);
+  const visibleIds = visible.map(c=>c.id);
+  if(!manualSelections[s.id]) manualSelections[s.id] = [];
+  manualSelections[s.id] = manualSelections[s.id].filter(id => !visibleIds.includes(id));
+  renderManualSelectScreen();
+}
+window.manualSelectNone = manualSelectNone;
 
 function selectMode(mode){
   currentMode = mode;
