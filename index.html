@@ -42,6 +42,9 @@
   .backbtn{width:36px;height:36px;border-radius:50%;background:var(--panel);border:1px solid var(--border);
     display:flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer;flex-shrink:0;}
   .backbtn svg{width:16px;height:16px;}
+  .backbtn.loading-spin{background:rgba(48,209,88,.16);border-color:var(--green);color:var(--green);
+    animation:spin-pulse 1s ease-in-out infinite;}
+  @keyframes spin-pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
   .topbar h1{font-size:20px;font-weight:700;margin:0;flex:1;text-align:center;}
   .topbar .spacer{width:36px;flex-shrink:0;}
 
@@ -432,7 +435,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 2026-08-21 16:35 (Print-Fix v2)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 2026-08-21 16:50 (Druck-Feedback)</div>
   </div>
 
   <!-- HOME -->
@@ -459,7 +462,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 2026-08-21 16:35 (Print-Fix v2)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 2026-08-21 16:50 (Druck-Feedback)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
@@ -747,7 +750,7 @@
     <div class="topbar">
       <div class="backbtn" onclick="exitSession()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg></div>
       <h1>Liste</h1>
-      <div class="backbtn" onclick="printList()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg></div>
+      <div class="backbtn" id="printBtn" onclick="printList()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg></div>
     </div>
     <div class="card-box"><div id="listModeContainer"></div></div>
   </div>
@@ -2885,6 +2888,11 @@ function renderListMode(s, cards){
 
 function printList(){
   if(!lastListSet || lastListCards.length===0){ showToast("Keine Liste zum Drucken"); return; }
+
+  const btn = document.getElementById('printBtn');
+  btn.classList.add('loading-spin');
+  showToast("Druckansicht wird vorbereitet – iOS fragt gleich um Erlaubnis…");
+
   const s = lastListSet;
   const srcName = LANGS[s.source].name;
   const tgtName = LANGS[s.target].name;
@@ -2901,6 +2909,10 @@ function printList(){
     ${rowsHtml}
   `;
   window.print();
+
+  const resetBtn = () => btn.classList.remove('loading-spin');
+  window.addEventListener('afterprint', resetBtn, { once:true });
+  setTimeout(resetBtn, 45000); // Sicherheitsnetz, falls afterprint nie feuert
 }
 window.printList = printList;
 
