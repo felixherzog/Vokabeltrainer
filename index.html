@@ -220,6 +220,15 @@
   .diff-badge.mittel{background:rgba(255,176,32,.16);color:var(--amber);}
   .diff-badge.schwer{background:rgba(255,77,79,.16);color:var(--red);}
   .diff-badge.neu{background:rgba(10,132,255,.16);color:var(--blue);}
+
+  .filter-badge{font-size:10px;font-weight:800;text-transform:uppercase;padding:4px 8px;border-radius:8px;
+    cursor:pointer;text-align:center;border:1px solid var(--border);color:var(--text-dim);background:transparent;
+    white-space:nowrap;}
+  .filter-badge.on-alle{background:rgba(48,209,88,.16);color:var(--green);border-color:var(--green);}
+  .filter-badge.on-neu{background:rgba(10,132,255,.16);color:var(--blue);border-color:var(--blue);}
+  .filter-badge.on-leicht{background:rgba(48,209,88,.16);color:var(--green);border-color:var(--green);}
+  .filter-badge.on-mittel{background:rgba(255,176,32,.16);color:var(--amber);border-color:var(--amber);}
+  .filter-badge.on-schwer{background:rgba(255,77,79,.16);color:var(--red);border-color:var(--red);}
   .del-btn{width:28px;height:28px;border-radius:50%;background:var(--panel-2);border:1px solid var(--border);
     color:var(--text-dim);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
   .del-btn svg{width:12px;height:12px;}
@@ -408,7 +417,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 2026-08-21 11:00 (Neu = Blau)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 2026-08-21 11:15 (Kompakte Filter-Badges)</div>
   </div>
 
   <!-- HOME -->
@@ -435,7 +444,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 2026-08-21 11:00 (Neu = Blau)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 2026-08-21 11:15 (Kompakte Filter-Badges)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
@@ -512,8 +521,10 @@
       <button class="btn-ghost hidden" id="cancelEditBtn" style="padding:4px;" onclick="cancelEditCard()">Bearbeitung abbrechen</button>
     </div>
 
-    <div class="section-label" style="margin:0 0 8px 4px;">Wörter (<span id="cardCount">0</span>)</div>
-    <div id="cardDifficultyFilterContainer" style="margin-bottom:14px;"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;margin:0 0 14px 4px;gap:10px;">
+      <div class="section-label" style="margin:0;">Wörter (<span id="cardCount">0</span>)</div>
+      <div id="cardDifficultyFilterContainer"></div>
+    </div>
     <div class="card-box"><div id="cardListContainer"></div></div>
   </div>
 
@@ -2019,10 +2030,10 @@ function renderCardDifficultyFilter(){
     { v:'alle', l:'Alle' }, { v:'neu', l:'Neu' }, { v:'leicht', l:'Leicht' },
     { v:'mittel', l:'Mittel' }, { v:'schwer', l:'Schwer' }
   ];
-  container.innerHTML = `<div class="pill-row" style="justify-content:flex-end;padding:0;">
+  container.innerHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
     ${options.map(o=>{
-      const active = cardDifficultyFilter===o.v ? `active pill-${o.v}` : '';
-      return `<button class="pill ${active}" onclick="selectCardDifficultyFilter('${o.v}')">${o.l} (${counts[o.v]})</button>`;
+      const active = cardDifficultyFilter===o.v ? `on-${o.v}` : '';
+      return `<span class="filter-badge ${active}" onclick="selectCardDifficultyFilter('${o.v}')">${o.l} (${counts[o.v]})</span>`;
     }).join('')}
   </div>`;
 }
