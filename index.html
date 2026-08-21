@@ -417,7 +417,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 2026-08-21 11:15 (Kompakte Filter-Badges)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 2026-08-21 12:30 (Sprachfilter kompakt)</div>
   </div>
 
   <!-- HOME -->
@@ -444,7 +444,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 2026-08-21 11:15 (Kompakte Filter-Badges)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 2026-08-21 12:30 (Sprachfilter kompakt)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
@@ -454,7 +454,10 @@
       <h1>Bearbeiten</h1>
       <div class="spacer"></div>
     </div>
-    <div id="editLangFilterContainer"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;margin:0 0 10px 4px;gap:10px;">
+      <div class="section-label" style="margin:0;">Lernsets</div>
+      <div id="editLangFilterContainer"></div>
+    </div>
     <div id="setListContainer"></div>
     <button class="btn-primary" onclick="openNewSet()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
@@ -629,8 +632,10 @@
       <div class="spacer"></div>
     </div>
 
-    <div id="setLangFilterContainer"></div>
-    <div class="section-label">Lernset</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;margin:0 0 10px 4px;gap:10px;">
+      <div class="section-label" style="margin:0;">Lernset</div>
+      <div id="setLangFilterContainer"></div>
+    </div>
     <div class="card-box" style="padding:0;background:none;border:none;margin-bottom:26px;" id="setSelectorContainer"></div>
 
     <div class="section-label">Auswahl</div>
@@ -1560,12 +1565,13 @@ function renderEditLangFilter(){
     return;
   }
   const allCount = appData.learnSets.length;
-  const pills = [`<div class="lang-filter-pill ${editLangFilter==='alle'?'active':''}" onclick="selectEditLangFilter('alle')">🌐<span class="fcount">${allCount}</span></div>`];
+  const badges = [`<span class="filter-badge ${editLangFilter==='alle'?'on-alle':''}" onclick="selectEditLangFilter('alle')" style="font-size:13px;">🌐 ${allCount}</span>`];
   targets.forEach(t=>{
     const count = appData.learnSets.filter(s=>s.target===t).length;
-    pills.push(`<div class="lang-filter-pill ${editLangFilter===t?'active':''}" onclick="selectEditLangFilter('${t}')">${LANGS[t].flag}<span class="fcount">${count}</span></div>`);
+    const active = editLangFilter===t ? 'on-alle' : '';
+    badges.push(`<span class="filter-badge ${active}" onclick="selectEditLangFilter('${t}')" style="font-size:13px;">${LANGS[t].flag} ${count}</span>`);
   });
-  container.innerHTML = `<div class="lang-filter-row">${pills.join('')}</div>`;
+  container.innerHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">${badges.join('')}</div>`;
 }
 
 function selectEditLangFilter(target){
@@ -2325,12 +2331,13 @@ function renderSetLangFilter(){
     return;
   }
   const allCount = appData.learnSets.length;
-  const pills = [`<div class="lang-filter-pill ${setLangFilter==='alle'?'active':''}" onclick="selectLangFilter('alle')">🌐<span class="fcount">${allCount}</span></div>`];
+  const badges = [`<span class="filter-badge ${setLangFilter==='alle'?'on-alle':''}" onclick="selectLangFilter('alle')" style="font-size:13px;">🌐 ${allCount}</span>`];
   targets.forEach(t=>{
     const count = appData.learnSets.filter(s=>s.target===t).length;
-    pills.push(`<div class="lang-filter-pill ${setLangFilter===t?'active':''}" onclick="selectLangFilter('${t}')">${LANGS[t].flag}<span class="fcount">${count}</span></div>`);
+    const active = setLangFilter===t ? 'on-alle' : '';
+    badges.push(`<span class="filter-badge ${active}" onclick="selectLangFilter('${t}')" style="font-size:13px;">${LANGS[t].flag} ${count}</span>`);
   });
-  container.innerHTML = `<div class="lang-filter-row">${pills.join('')}</div>`;
+  container.innerHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">${badges.join('')}</div>`;
 }
 
 function selectLangFilter(target){
