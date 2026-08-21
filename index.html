@@ -310,16 +310,16 @@
 
   #printArea{display:none;}
   @media print{
-    body > *{ display:none !important; }
-    #printArea{ display:block !important; }
-    #printArea *{ display:revert !important; }
+    html, body{ background:#fff !important; }
+    .app, .toast, .modal-overlay, .action-menu-wrap{ display:none !important; }
+    #printArea{ display:block !important; position:static !important; }
     @page{ size:A4; margin:2cm; }
-    #printArea{ color:#000; background:#fff; font-family:-apple-system,sans-serif; }
-    #printArea h1{ font-size:20px;margin:0 0 20px; }
+    #printArea{ color:#000 !important; background:#fff !important; font-family:-apple-system,sans-serif; }
+    #printArea h1{ font-size:20px;margin:0 0 20px;color:#000 !important; }
     #printArea .p-row{ display:flex; justify-content:space-between; gap:20px; padding:10px 0; border-bottom:1px solid #ccc; }
     #printArea .p-col{ flex:1; }
-    #printArea .p-word{ font-weight:700;font-size:14px; }
-    #printArea .p-example{ font-size:11px;color:#555;font-style:italic;margin-top:2px; }
+    #printArea .p-word{ font-weight:700;font-size:14px;color:#000 !important; }
+    #printArea .p-example{ font-size:11px;color:#555 !important;font-style:italic;margin-top:2px; }
   }
 
   .done-wrap{text-align:center;padding:50px 20px;}
@@ -432,7 +432,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 2026-08-21 13:10 (Print-Fix)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 2026-08-21 16:35 (Print-Fix v2)</div>
   </div>
 
   <!-- HOME -->
@@ -459,7 +459,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 2026-08-21 13:10 (Print-Fix)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 2026-08-21 16:35 (Print-Fix v2)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
