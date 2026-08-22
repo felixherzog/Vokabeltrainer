@@ -459,7 +459,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 2026-08-22 09:20 (Leerseiten-Fix)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 2026-08-22 09:35 (Warte-Hinweis)</div>
   </div>
 
   <!-- HOME -->
@@ -491,7 +491,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 2026-08-22 09:20 (Leerseiten-Fix)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 2026-08-22 09:35 (Warte-Hinweis)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
@@ -760,9 +760,12 @@
     <div class="card-box" id="printModeListBox"></div>
 
     <button class="btn-primary" id="fcPrintBtn" onclick="startFlashcardPrint()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>
-      Drucken
+      <span id="fcPrintBtnContent" style="display:flex;align-items:center;gap:8px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>
+        Drucken
+      </span>
     </button>
+    <div style="text-align:center;font-size:12px;color:var(--text-dim);margin-top:10px;line-height:1.5;">Hinweis: Nach dem Antippen kann es bis zu 1 Minute dauern, bis der Druckdialog erscheint (Sicherheitsfunktion von Safari).</div>
   </div>
 
   <!-- WÖRTER MANUELL AUSWÄHLEN -->
@@ -3067,14 +3070,24 @@ function buildListPrintHtml(s, cards){
   return `<h1>${escapeHtml(s.name)} (${srcName} → ${tgtName})</h1>${rowsHtml}`;
 }
 
-function triggerPrint(btnId){
+function triggerPrint(btnId, contentId){
   const btn = document.getElementById(btnId);
+  const contentEl = contentId ? document.getElementById(contentId) : null;
+  let originalHtml = null;
   if(btn) btn.classList.add('loading-spin');
-  showToast("Druckansicht wird vorbereitet – iOS fragt gleich um Erlaubnis…");
+  if(contentEl){
+    originalHtml = contentEl.innerHTML;
+    contentEl.innerHTML = 'Wird vorbereitet… (bis zu 1 Min.)';
+  } else {
+    showToast("Druckansicht wird vorbereitet – iOS fragt gleich um Erlaubnis…");
+  }
   window.print();
-  const resetBtn = () => { if(btn) btn.classList.remove('loading-spin'); };
+  const resetBtn = () => {
+    if(btn) btn.classList.remove('loading-spin');
+    if(contentEl && originalHtml !== null) contentEl.innerHTML = originalHtml;
+  };
   window.addEventListener('afterprint', resetBtn, { once:true });
-  setTimeout(resetBtn, 45000); // Sicherheitsnetz, falls afterprint nie feuert
+  setTimeout(resetBtn, 65000); // Sicherheitsnetz, falls afterprint nie feuert
 }
 
 function printList(){
@@ -3151,7 +3164,7 @@ function startFlashcardPrint(){
   else if(printMode==='kleben') html = buildGluePrintHtml(s, cards);
 
   document.getElementById('printArea').innerHTML = html;
-  triggerPrint('fcPrintBtn');
+  triggerPrint('fcPrintBtn', 'fcPrintBtnContent');
 }
 window.startFlashcardPrint = startFlashcardPrint;
 
