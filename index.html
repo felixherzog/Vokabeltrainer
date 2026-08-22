@@ -323,6 +323,30 @@
     #printArea .p-col{ flex:1; }
     #printArea .p-word{ font-weight:700;font-size:14px;color:#000 !important; }
     #printArea .p-example{ font-size:11px;color:#555 !important;font-style:italic;margin-top:2px; }
+
+    #printArea .fc-page{ page-break-after:always; }
+    #printArea .fc-page:last-child{ page-break-after:auto; }
+
+    #printArea .fc-print-grid-duplex{ display:grid; grid-template-columns:repeat(2,1fr); grid-template-rows:repeat(4,1fr);
+      width:100%; height:257mm; border-top:1px dashed #ccc; border-left:1px dashed #ccc; }
+    #printArea .fc-print-grid-duplex.fc-back{ direction:rtl; }
+    #printArea .fc-card{ direction:ltr; display:flex; flex-direction:column; align-items:center; justify-content:center;
+      padding:4mm; box-sizing:border-box; position:relative; border-right:1px dashed #ccc; border-bottom:1px dashed #ccc; overflow:hidden; }
+    #printArea .fc-print-grid-duplex .fc-card:nth-child(2n){ border-right:none; }
+    #printArea .fc-print-grid-duplex .fc-card:nth-child(n+7){ border-bottom:none; }
+
+    #printArea .fc-word{ font-weight:700; font-size:13pt; color:#000 !important; text-align:center; }
+    #printArea .fc-example{ font-size:8pt; font-style:italic; color:#555 !important; text-align:center; margin-top:1.5mm; }
+    #printArea .fc-setname{ position:absolute; bottom:1.5mm; left:2mm; right:2mm; text-align:center;
+      font-size:6pt; color:#999 !important; }
+
+    #printArea .fc-print-grid-glue{ display:flex; flex-direction:column; width:100%; height:257mm;
+      border-top:1px dashed #ccc; }
+    #printArea .fc-glue-card{ flex:1; display:flex; flex-direction:row; border-bottom:1px dashed #ccc; position:relative; }
+    #printArea .fc-print-grid-glue .fc-glue-card:last-child{ border-bottom:none; }
+    #printArea .fc-glue-half{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+      padding:4mm; box-sizing:border-box; position:relative; overflow:hidden; }
+    #printArea .fc-fold-line{ position:absolute; left:50%; top:2mm; bottom:2mm; border-left:1px dashed #4d94ff; }
   }
 
   .done-wrap{text-align:center;padding:50px 20px;}
@@ -435,7 +459,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 2026-08-21 16:50 (Druck-Feedback)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 2026-08-22 09:00 (Karteikarten-Druckfunktion)</div>
   </div>
 
   <!-- HOME -->
@@ -451,6 +475,11 @@
       Lernen
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
+    <button class="menu-btn" onclick="go('view-flashcard-setup')">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg></span>
+      Karteikarten
+      <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
+    </button>
     <button class="menu-btn" onclick="openEdit()">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
       Bearbeiten
@@ -462,7 +491,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 2026-08-21 16:50 (Druck-Feedback)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 2026-08-22 09:00 (Karteikarten-Druckfunktion)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
@@ -676,7 +705,7 @@
     <div id="manualSummaryWrap" class="hidden">
       <div class="card-box" style="padding:18px;margin-bottom:26px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
         <div style="font-size:15px;font-weight:700;" id="manualSummaryText">0 Wörter ausgewählt</div>
-        <button class="btn-ghost" onclick="openManualSelect()">Auswahl bearbeiten</button>
+        <button class="btn-ghost" onclick="openManualSelect('view-learn-setup')">Auswahl bearbeiten</button>
       </div>
     </div>
 
@@ -686,6 +715,53 @@
     <button class="btn-primary" id="startBtn" onclick="startSession()">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
       Start
+    </button>
+  </div>
+
+  <!-- KARTEIKARTEN DRUCKEN: Setup -->
+  <div class="screen" id="view-flashcard-setup">
+    <div class="topbar">
+      <div class="backbtn" onclick="go('view-home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></div>
+      <h1>Karteikarten</h1>
+      <div class="spacer"></div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;margin:0 0 10px 4px;gap:10px;">
+      <div class="section-label" style="margin:0;">Lernset</div>
+      <div id="fcSetLangFilterContainer"></div>
+    </div>
+    <div class="card-box" style="padding:0;background:none;border:none;margin-bottom:26px;" id="fcSetSelectorContainer"></div>
+
+    <div class="section-label">Auswahl</div>
+    <div class="card-box" style="padding:0;background:none;border:none;">
+      <div class="pill-row" id="fcSelectionModePills" style="padding:0 0 16px;"></div>
+    </div>
+
+    <div id="fcCategoryCountWrap">
+      <div class="section-label">Kategorie</div>
+      <div class="card-box" style="padding:0;background:none;border:none;">
+        <div class="pill-row" id="fcCategoryPills" style="padding:0 0 26px;"></div>
+      </div>
+
+      <div class="section-label">Anzahl</div>
+      <div class="card-box" style="padding:0;background:none;border:none;">
+        <div class="pill-row" id="fcCountPills" style="padding:0 0 26px;"></div>
+      </div>
+    </div>
+
+    <div id="fcManualSummaryWrap" class="hidden">
+      <div class="card-box" style="padding:18px;margin-bottom:26px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+        <div style="font-size:15px;font-weight:700;" id="fcManualSummaryText">0 Wörter ausgewählt</div>
+        <button class="btn-ghost" onclick="openManualSelect('view-flashcard-setup')">Auswahl bearbeiten</button>
+      </div>
+    </div>
+
+    <div class="section-label">Druckmodus</div>
+    <div class="card-box" id="printModeListBox"></div>
+
+    <button class="btn-primary" id="fcPrintBtn" onclick="startFlashcardPrint()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>
+      Drucken
     </button>
   </div>
 
@@ -2327,13 +2403,30 @@ function openLearnSetup(){
   renderLearnSetup();
 }
 
+function openFlashcardSetup(){
+  if(appData.learnSets.length===0){
+    currentSetId = null;
+  } else if(!getSet(currentSetId)){
+    const lastUsed = appData.lastUsedSetId && getSet(appData.lastUsedSetId);
+    currentSetId = lastUsed ? appData.lastUsedSetId : appData.learnSets[0].id;
+  }
+  currentCategory = "alle";
+  setLangFilter = 'alle';
+  renderFlashcardSetup();
+}
+
+function refreshSetupScreen(){
+  if(document.getElementById('view-learn-setup').classList.contains('active')) renderLearnSetup();
+  if(document.getElementById('view-flashcard-setup').classList.contains('active')) renderFlashcardSetup();
+}
+
 function selectSet(id){
   currentSetId = id;
   appData.lastUsedSetId = id;
   saveLocal();
   currentCategory = "alle";
   currentMode = null;
-  renderLearnSetup();
+  refreshSetupScreen();
 }
 window.selectSet = selectSet;
 
@@ -2343,21 +2436,21 @@ function getVisibleLearnSets(){
 }
 
 function renderSetLangFilter(){
-  const container = document.getElementById('setLangFilterContainer');
   const targets = [...new Set(appData.learnSets.map(s=>s.target))];
-  if(targets.length <= 1){
-    container.innerHTML = '';
-    if(setLangFilter !== 'alle') setLangFilter = 'alle';
-    return;
-  }
-  const allCount = appData.learnSets.length;
-  const badges = [`<span class="filter-badge ${setLangFilter==='alle'?'on-alle':''}" onclick="selectLangFilter('alle')" style="font-size:13px;">🌐 ${allCount}</span>`];
-  targets.forEach(t=>{
-    const count = appData.learnSets.filter(s=>s.target===t).length;
-    const active = setLangFilter===t ? 'on-alle' : '';
-    badges.push(`<span class="filter-badge ${active}" onclick="selectLangFilter('${t}')" style="font-size:13px;">${LANGS[t].flag} ${count}</span>`);
+  if(targets.length <= 1 && setLangFilter !== 'alle') setLangFilter = 'alle';
+  ['setLangFilterContainer','fcSetLangFilterContainer'].forEach(id=>{
+    const container = document.getElementById(id);
+    if(!container) return;
+    if(targets.length <= 1){ container.innerHTML = ''; return; }
+    const allCount = appData.learnSets.length;
+    const badges = [`<span class="filter-badge ${setLangFilter==='alle'?'on-alle':''}" onclick="selectLangFilter('alle')" style="font-size:13px;">🌐 ${allCount}</span>`];
+    targets.forEach(t=>{
+      const count = appData.learnSets.filter(s=>s.target===t).length;
+      const active = setLangFilter===t ? 'on-alle' : '';
+      badges.push(`<span class="filter-badge ${active}" onclick="selectLangFilter('${t}')" style="font-size:13px;">${LANGS[t].flag} ${count}</span>`);
+    });
+    container.innerHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">${badges.join('')}</div>`;
   });
-  container.innerHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">${badges.join('')}</div>`;
 }
 
 function selectLangFilter(target){
@@ -2368,7 +2461,7 @@ function selectLangFilter(target){
     currentCategory = "alle";
     currentMode = null;
   }
-  renderLearnSetup();
+  refreshSetupScreen();
 }
 window.selectLangFilter = selectLangFilter;
 
@@ -2398,28 +2491,33 @@ function getFilteredCards(){
 
 function renderSetSelector(s){
   renderSetLangFilter();
-  const container = document.getElementById('setSelectorContainer');
   const visible = getVisibleLearnSets();
-  if(visible.length === 0){
-    container.innerHTML = `<button class="select-pill" style="opacity:.6;cursor:default;"><span>Kein Lernset vorhanden</span></button>`;
-    return;
-  }
-  if(visible.length > 3){
-    const sorted = visible.slice().sort((a,b)=> a.name.localeCompare(b.name, 'de'));
-    container.innerHTML = `
-      <div class="select-native-wrap">
-        <select onchange="selectSet(this.value)">
-          ${sorted.map(set=>`<option value="${set.id}" ${set.id===currentSetId?'selected':''}>${escapeHtml(set.name)}</option>`).join('')}
-        </select>
-        <span class="chev-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></span>
-      </div>`;
-  } else {
-    container.innerHTML = `
-      <button class="select-pill" onclick="cycleSet()">
-        <span>${escapeHtml(s ? s.name : "–")}</span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
-      </button>`;
-  }
+  ['setSelectorContainer','fcSetSelectorContainer'].forEach((id, idx)=>{
+    const container = document.getElementById(id);
+    if(!container) return;
+    const onchangeFn = 'selectSet';
+    const oncycleFn = 'cycleSet';
+    if(visible.length === 0){
+      container.innerHTML = `<button class="select-pill" style="opacity:.6;cursor:default;"><span>Kein Lernset vorhanden</span></button>`;
+      return;
+    }
+    if(visible.length > 3){
+      const sorted = visible.slice().sort((a,b)=> a.name.localeCompare(b.name, 'de'));
+      container.innerHTML = `
+        <div class="select-native-wrap">
+          <select onchange="${onchangeFn}(this.value)">
+            ${sorted.map(set=>`<option value="${set.id}" ${set.id===currentSetId?'selected':''}>${escapeHtml(set.name)}</option>`).join('')}
+          </select>
+          <span class="chev-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></span>
+        </div>`;
+    } else {
+      container.innerHTML = `
+        <button class="select-pill" onclick="${oncycleFn}()">
+          <span>${escapeHtml(s ? s.name : "–")}</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>`;
+    }
+  });
 }
 
 function renderLearnSetup(){
@@ -2487,26 +2585,95 @@ function renderLearnSetup(){
   switchScreen('view-learn-setup');
 }
 
+let printMode = 'liste'; // 'liste' | 'duplex' | 'kleben'
+
+function renderFlashcardSetup(){
+  const s = getSet(currentSetId);
+  renderSetSelector(s);
+
+  const selModeBox = document.getElementById('fcSelectionModePills');
+  selModeBox.innerHTML = `
+    <button class="pill ${!manualMode?'active':''}" onclick="setManualMode(false)">Kategorie/Anzahl</button>
+    <button class="pill ${manualMode?'active':''}" onclick="setManualMode(true)">Manuell</button>
+  `;
+  document.getElementById('fcCategoryCountWrap').classList.toggle('hidden', manualMode);
+  document.getElementById('fcManualSummaryWrap').classList.toggle('hidden', !manualMode);
+  if(manualMode){
+    const selected = (s && manualSelections[s.id]) || [];
+    document.getElementById('fcManualSummaryText').textContent = `${selected.length} Wort${selected.length===1?'':'e'} ausgewählt`;
+  }
+
+  const all = s ? s.cards : [];
+  const counts = {
+    alle: all.length,
+    neu: all.filter(c=>!c.difficulty || c.difficulty==='neu').length,
+    leicht: all.filter(c=>c.difficulty==='leicht').length,
+    mittel: all.filter(c=>c.difficulty==='mittel').length,
+    schwer: all.filter(c=>c.difficulty==='schwer').length,
+  };
+  const catBox = document.getElementById('fcCategoryPills');
+  catBox.innerHTML = ['alle','neu','leicht','mittel','schwer'].map(cat=>{
+    const label = cat==='alle' ? 'Alle' : cat.charAt(0).toUpperCase()+cat.slice(1);
+    const active = currentCategory===cat ? `active pill-${cat}` : '';
+    return `<button class="pill ${active}" onclick="selectCategory('${cat}')">${label} (${counts[cat]})</button>`;
+  }).join('');
+
+  const countBox = document.getElementById('fcCountPills');
+  countBox.innerHTML = ['alle','5','10','15','20'].map(c=>{
+    const label = c==='alle' ? 'Alle' : c;
+    const active = countFilter===c ? 'active' : '';
+    return `<button class="pill ${active}" onclick="selectCountFilter('${c}')">${label}</button>`;
+  }).join('');
+
+  const filtered = getFilteredCards();
+  const n = filtered.length;
+
+  const printModes = [
+    { key:'liste', label:'Liste', hint:'Wort + Übersetzung als Textliste' },
+    { key:'duplex', label:'Karteikarte (doppelseitig)', hint:'Zum beidseitigen Ausdrucken (Duplex)' },
+    { key:'kleben', label:'Karteikarte (kleben)', hint:'Einseitig, zum Falzen & Kleben' },
+  ];
+  document.getElementById('printModeListBox').innerHTML = printModes.map(m=>{
+    const checked = printMode===m.key;
+    return `<div class="mode-item" onclick="selectPrintMode('${m.key}')">
+      <div class="lbl">${m.label}</div>
+      <div class="hint">${m.hint}</div>
+      <div class="radio ${checked?'checked':''}">${checked?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>':''}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('fcPrintBtn').disabled = !s || n===0;
+  switchScreen('view-flashcard-setup');
+}
+
+function selectPrintMode(mode){
+  printMode = mode;
+  renderFlashcardSetup();
+}
+window.selectPrintMode = selectPrintMode;
+
 function selectCategory(cat){
   currentCategory = cat;
-  renderLearnSetup();
+  refreshSetupScreen();
 }
 window.selectCategory = selectCategory;
 
 function selectCountFilter(c){
   countFilter = c;
-  renderLearnSetup();
+  refreshSetupScreen();
 }
 window.selectCountFilter = selectCountFilter;
 
 function setManualMode(on){
   manualMode = on;
-  renderLearnSetup();
+  refreshSetupScreen();
 }
 window.setManualMode = setManualMode;
 
 /* ---- Wörter manuell auswählen ---- */
-function openManualSelect(){
+let manualSelectReturnScreen = 'view-learn-setup';
+function openManualSelect(returnScreen){
+  manualSelectReturnScreen = returnScreen || 'view-learn-setup';
   manualFilterCategory = 'alle';
   renderManualSelectScreen();
   switchScreen('view-manual-select');
@@ -2514,8 +2681,8 @@ function openManualSelect(){
 window.openManualSelect = openManualSelect;
 
 function closeManualSelect(){
-  switchScreen('view-learn-setup');
-  renderLearnSetup();
+  switchScreen(manualSelectReturnScreen);
+  refreshSetupScreen();
 }
 window.closeManualSelect = closeManualSelect;
 
@@ -2886,17 +3053,10 @@ function renderListMode(s, cards){
   }).join('');
 }
 
-function printList(){
-  if(!lastListSet || lastListCards.length===0){ showToast("Keine Liste zum Drucken"); return; }
-
-  const btn = document.getElementById('printBtn');
-  btn.classList.add('loading-spin');
-  showToast("Druckansicht wird vorbereitet – iOS fragt gleich um Erlaubnis…");
-
-  const s = lastListSet;
+function buildListPrintHtml(s, cards){
   const srcName = LANGS[s.source].name;
   const tgtName = LANGS[s.target].name;
-  const rowsHtml = lastListCards.map(card=>{
+  const rowsHtml = cards.map(card=>{
     const exSrc = card.exampleSource ? `<div class="p-example">${escapeHtml(card.exampleSource)}</div>` : '';
     const exTgt = card.exampleTarget ? `<div class="p-example">${escapeHtml(card.exampleTarget)}</div>` : '';
     return `<div class="p-row">
@@ -2904,17 +3064,96 @@ function printList(){
       <div class="p-col"><div class="p-word">${escapeHtml(card.target)}</div>${exTgt}</div>
     </div>`;
   }).join('');
-  document.getElementById('printArea').innerHTML = `
-    <h1>${escapeHtml(s.name)} (${srcName} → ${tgtName})</h1>
-    ${rowsHtml}
-  `;
-  window.print();
+  return `<h1>${escapeHtml(s.name)} (${srcName} → ${tgtName})</h1>${rowsHtml}`;
+}
 
-  const resetBtn = () => btn.classList.remove('loading-spin');
+function triggerPrint(btnId){
+  const btn = document.getElementById(btnId);
+  if(btn) btn.classList.add('loading-spin');
+  showToast("Druckansicht wird vorbereitet – iOS fragt gleich um Erlaubnis…");
+  window.print();
+  const resetBtn = () => { if(btn) btn.classList.remove('loading-spin'); };
   window.addEventListener('afterprint', resetBtn, { once:true });
   setTimeout(resetBtn, 45000); // Sicherheitsnetz, falls afterprint nie feuert
 }
+
+function printList(){
+  if(!lastListSet || lastListCards.length===0){ showToast("Keine Liste zum Drucken"); return; }
+  document.getElementById('printArea').innerHTML = buildListPrintHtml(lastListSet, lastListCards);
+  triggerPrint('printBtn');
+}
 window.printList = printList;
+
+/* ---- Karteikarten drucken ---- */
+function fcCardHtml(word, example, setName){
+  const ex = example ? `<div class="fc-example">${escapeHtml(example)}</div>` : '';
+  return `<div class="fc-card">
+    <div class="fc-word">${escapeHtml(word)}</div>
+    ${ex}
+    <div class="fc-setname">${escapeHtml(setName)}</div>
+  </div>`;
+}
+
+function buildDuplexPrintHtml(s, cards){
+  const perPage = 8;
+  let html = '';
+  for(let i=0;i<cards.length;i+=perPage){
+    const chunk = cards.slice(i, i+perPage);
+    html += `<div class="fc-page"><div class="fc-print-grid-duplex">`;
+    html += chunk.map(c=>fcCardHtml(c.source, c.exampleSource, s.name)).join('');
+    html += `</div></div>`;
+    html += `<div class="fc-page"><div class="fc-print-grid-duplex fc-back">`;
+    html += chunk.map(c=>fcCardHtml(c.target, c.exampleTarget, s.name)).join('');
+    html += `</div></div>`;
+  }
+  return html;
+}
+
+function fcGlueCardHtml(front, frontEx, back, backEx, setName){
+  const fEx = frontEx ? `<div class="fc-example">${escapeHtml(frontEx)}</div>` : '';
+  const bEx = backEx ? `<div class="fc-example">${escapeHtml(backEx)}</div>` : '';
+  return `<div class="fc-glue-card">
+    <div class="fc-glue-half">
+      <div class="fc-word">${escapeHtml(front)}</div>
+      ${fEx}
+      <div class="fc-setname">${escapeHtml(setName)}</div>
+    </div>
+    <div class="fc-fold-line"></div>
+    <div class="fc-glue-half">
+      <div class="fc-word" style="color:#1f8a3c;">${escapeHtml(back)}</div>
+      ${bEx}
+      <div class="fc-setname">${escapeHtml(setName)}</div>
+    </div>
+  </div>`;
+}
+
+function buildGluePrintHtml(s, cards){
+  const perPage = 4;
+  let html = '';
+  for(let i=0;i<cards.length;i+=perPage){
+    const chunk = cards.slice(i, i+perPage);
+    html += `<div class="fc-page"><div class="fc-print-grid-glue">`;
+    html += chunk.map(c=>fcGlueCardHtml(c.source, c.exampleSource, c.target, c.exampleTarget, s.name)).join('');
+    html += `</div></div>`;
+  }
+  return html;
+}
+
+function startFlashcardPrint(){
+  const s = getSet(currentSetId);
+  if(!s){ showToast("Kein Lernset ausgewählt"); return; }
+  const cards = getFilteredCards();
+  if(cards.length===0){ showToast("Keine Wörter für diese Auswahl"); return; }
+
+  let html = '';
+  if(printMode==='liste') html = buildListPrintHtml(s, cards);
+  else if(printMode==='duplex') html = buildDuplexPrintHtml(s, cards);
+  else if(printMode==='kleben') html = buildGluePrintHtml(s, cards);
+
+  document.getElementById('printArea').innerHTML = html;
+  triggerPrint('fcPrintBtn');
+}
+window.startFlashcardPrint = startFlashcardPrint;
 
 /* ---- Multiple Choice mode ---- */
 function startMultipleChoice(s, cards){
@@ -3004,6 +3243,7 @@ function render(){
 function go(id){
   try{
     if(id === 'view-learn-setup'){ openLearnSetup(); return; }
+    if(id === 'view-flashcard-setup'){ openFlashcardSetup(); return; }
     if(id === 'view-settings'){ renderTrash(); switchScreen(id); return; }
     if(id === 'view-duplicates'){ renderDuplicates(); switchScreen(id); return; }
     if(id === 'view-spellcheck'){ spellCheckResults=[]; document.getElementById('spellCheckContainer').innerHTML=''; switchScreen(id); return; }
