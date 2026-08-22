@@ -327,22 +327,22 @@
     #printArea .fc-page{ page-break-after:always; overflow:hidden; }
     #printArea .fc-page:last-child{ page-break-after:auto; }
 
-    #printArea .fc-print-grid-duplex{ display:grid; grid-template-columns:repeat(2,1fr); grid-template-rows:repeat(4,58mm);
-      width:100%; max-height:250mm; overflow:hidden; border-top:1px dashed #ccc; border-left:1px dashed #ccc; }
+    #printArea .fc-print-grid-duplex{ display:grid; grid-template-columns:repeat(2,1fr); grid-template-rows:repeat(3,65mm);
+      width:100%; max-height:220mm; overflow:hidden; border-top:1px dashed #ccc; border-left:1px dashed #ccc; }
     #printArea .fc-print-grid-duplex.fc-back{ direction:rtl; }
     #printArea .fc-card{ direction:ltr; display:flex; flex-direction:column; align-items:center; justify-content:center;
       padding:3mm; box-sizing:border-box; position:relative; border-right:1px dashed #ccc; border-bottom:1px dashed #ccc; overflow:hidden; }
     #printArea .fc-print-grid-duplex .fc-card:nth-child(2n){ border-right:none; }
-    #printArea .fc-print-grid-duplex .fc-card:nth-child(n+7){ border-bottom:none; }
+    #printArea .fc-print-grid-duplex .fc-card:nth-child(n+5){ border-bottom:none; }
 
     #printArea .fc-word{ font-weight:700; font-size:13pt; color:#000 !important; text-align:center; }
     #printArea .fc-example{ font-size:8pt; font-style:italic; color:#555 !important; text-align:center; margin-top:1.5mm; }
     #printArea .fc-setname{ position:absolute; bottom:1.5mm; left:2mm; right:2mm; text-align:center;
       font-size:6pt; color:#999 !important; }
 
-    #printArea .fc-print-grid-glue{ display:flex; flex-direction:column; width:100%; max-height:250mm; overflow:hidden;
+    #printArea .fc-print-grid-glue{ display:flex; flex-direction:column; width:100%; max-height:220mm; overflow:hidden;
       border-top:1px dashed #ccc; }
-    #printArea .fc-glue-card{ height:58mm; flex-shrink:0; display:flex; flex-direction:row; border-bottom:1px dashed #ccc; position:relative; }
+    #printArea .fc-glue-card{ height:65mm; flex-shrink:0; display:flex; flex-direction:row; border-bottom:1px dashed #ccc; position:relative; }
     #printArea .fc-print-grid-glue .fc-glue-card:last-child{ border-bottom:none; }
     #printArea .fc-glue-half{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
       padding:3mm; box-sizing:border-box; position:relative; overflow:hidden; }
@@ -459,7 +459,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 2026-08-22 09:35 (Warte-Hinweis)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 2026-08-22 10:00 (Leerseiten-Fix v2, 6/3 pro Blatt)</div>
   </div>
 
   <!-- HOME -->
@@ -491,7 +491,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 2026-08-22 09:35 (Warte-Hinweis)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 2026-08-22 10:00 (Leerseiten-Fix v2, 6/3 pro Blatt)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
@@ -3108,7 +3108,7 @@ function fcCardHtml(word, example, setName){
 }
 
 function buildDuplexPrintHtml(s, cards){
-  const perPage = 8;
+  const perPage = 6;
   let html = '';
   for(let i=0;i<cards.length;i+=perPage){
     const chunk = cards.slice(i, i+perPage);
@@ -3141,7 +3141,7 @@ function fcGlueCardHtml(front, frontEx, back, backEx, setName){
 }
 
 function buildGluePrintHtml(s, cards){
-  const perPage = 4;
+  const perPage = 3;
   let html = '';
   for(let i=0;i<cards.length;i+=perPage){
     const chunk = cards.slice(i, i+perPage);
