@@ -459,7 +459,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 2026-08-22 10:00 (Leerseiten-Fix v2, 6/3 pro Blatt)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 2026-08-23 19:15 (Manuelle Auswahl synct jetzt)</div>
   </div>
 
   <!-- HOME -->
@@ -491,7 +491,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 2026-08-22 10:00 (Leerseiten-Fix v2, 6/3 pro Blatt)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 2026-08-23 19:15 (Manuelle Auswahl synct jetzt)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
@@ -1359,7 +1359,7 @@ const LANGS = {
 const LANG_KEYS = Object.keys(LANGS);
 
 /* ============ STATE ============ */
-let appData = { learnSets: [], deletedSets: [], lastUsedSetId: null };
+let appData = { learnSets: [], deletedSets: [], lastUsedSetId: null, manualSelections: {} };
 let currentSetId = null;
 let setLangFilter = 'alle';
 let editLangFilter = 'alle';
@@ -1367,7 +1367,7 @@ let currentCategory = "alle";
 let currentMode = null; // 'fwd' | 'bwd' | 'list' | 'mc'
 let countFilter = "alle"; // 'alle' | '5' | '10' | '15' | '20'
 let manualMode = false;
-let manualSelections = {}; // { [setId]: [cardId, cardId, ...] }
+// manualSelections lebt jetzt in appData.manualSelections (wird mitsynchronisiert)
 let manualFilterCategory = 'alle';
 let newSetSource = "DE";
 let newSetTarget = "ES";
@@ -1504,6 +1504,7 @@ function loadLocal(){
   if(!appData.deletedSets) appData.deletedSets = [];
   if(!appData.learnSets) appData.learnSets = [];
   if(appData.lastUsedSetId === undefined) appData.lastUsedSetId = null;
+  if(!appData.manualSelections || typeof appData.manualSelections !== 'object') appData.manualSelections = {};
   purgeExpiredDeletedSets();
 }
 function saveLocal(){
@@ -1536,6 +1537,7 @@ function persist(){
       learnSets: appData.learnSets,
       deletedSets: appData.deletedSets,
       lastUsedSetId: appData.lastUsedSetId||null,
+      manualSelections: appData.manualSelections||{},
       speechSettings: speechSettings,
       updatedAt: Date.now()
     }, { merge: true })
@@ -1562,6 +1564,7 @@ async function startProfileSync(profileId, profileName){
         if(Array.isArray(remote.learnSets)) appData.learnSets = remote.learnSets;
         appData.deletedSets = Array.isArray(remote.deletedSets) ? remote.deletedSets : appData.deletedSets;
         appData.lastUsedSetId = remote.lastUsedSetId || null;
+        appData.manualSelections = remote.manualSelections && typeof remote.manualSelections === 'object' ? remote.manualSelections : (appData.manualSelections || {});
         if(remote.speechSettings) speechSettings = Object.assign(speechSettings, remote.speechSettings);
         purgeExpiredDeletedSets();
         saveLocal();
@@ -2415,6 +2418,13 @@ function openFlashcardSetup(){
   }
   currentCategory = "alle";
   setLangFilter = 'alle';
+  printTapBlocked = false;
+  const btn = document.getElementById('fcPrintBtn');
+  const contentEl = document.getElementById('fcPrintBtnContent');
+  if(btn) btn.classList.remove('loading-spin');
+  if(contentEl){
+    contentEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg> Drucken`;
+  }
   renderFlashcardSetup();
 }
 
@@ -2481,7 +2491,7 @@ function getFilteredCards(){
   const s = getSet(currentSetId);
   if(!s) return [];
   if(manualMode){
-    const selected = manualSelections[currentSetId] || [];
+    const selected = appData.manualSelections[currentSetId] || [];
     return s.cards.filter(c => selected.includes(c.id));
   }
   let cards = currentCategory==='alle' ? s.cards : s.cards.filter(c => (c.difficulty||'neu') === currentCategory);
@@ -2535,8 +2545,8 @@ function renderLearnSetup(){
   document.getElementById('categoryCountWrap').classList.toggle('hidden', manualMode);
   document.getElementById('manualSummaryWrap').classList.toggle('hidden', !manualMode);
   if(manualMode){
-    const selected = (s && manualSelections[s.id]) || [];
-    document.getElementById('manualSummaryText').textContent = `${selected.length} Wort${selected.length===1?'':'e'} ausgewählt`;
+    const selected = (s && appData.manualSelections[s.id]) || [];
+    document.getElementById('manualSummaryText').textContent = `${selected.length} ${selected.length===1?'Wort':'Wörter'} ausgewählt`;
   }
 
   const all = s ? s.cards : [];
@@ -2602,8 +2612,8 @@ function renderFlashcardSetup(){
   document.getElementById('fcCategoryCountWrap').classList.toggle('hidden', manualMode);
   document.getElementById('fcManualSummaryWrap').classList.toggle('hidden', !manualMode);
   if(manualMode){
-    const selected = (s && manualSelections[s.id]) || [];
-    document.getElementById('fcManualSummaryText').textContent = `${selected.length} Wort${selected.length===1?'':'e'} ausgewählt`;
+    const selected = (s && appData.manualSelections[s.id]) || [];
+    document.getElementById('fcManualSummaryText').textContent = `${selected.length} ${selected.length===1?'Wort':'Wörter'} ausgewählt`;
   }
 
   const all = s ? s.cards : [];
@@ -2718,7 +2728,7 @@ function renderManualSelectScreen(){
   const s = getSet(currentSetId);
   const container = document.getElementById('manualListContainer');
   if(!s){ container.innerHTML = ''; return; }
-  const selected = manualSelections[s.id] || [];
+  const selected = appData.manualSelections[s.id] || [];
   const visible = manualFilterCategory==='alle' ? s.cards : s.cards.filter(c => (c.difficulty||'neu')===manualFilterCategory);
   if(visible.length===0){
     container.innerHTML = `<div class="empty" style="padding:30px 16px;"><div class="ic">🔍</div><p>Keine Wörter für diesen Filter</p></div>`;
@@ -2738,10 +2748,11 @@ function renderManualSelectScreen(){
 function toggleManualCard(cardId){
   const s = getSet(currentSetId);
   if(!s) return;
-  if(!manualSelections[s.id]) manualSelections[s.id] = [];
-  const arr = manualSelections[s.id];
+  if(!appData.manualSelections[s.id]) appData.manualSelections[s.id] = [];
+  const arr = appData.manualSelections[s.id];
   const idx = arr.indexOf(cardId);
   if(idx === -1) arr.push(cardId); else arr.splice(idx,1);
+  persist();
   renderManualSelectScreen();
 }
 window.toggleManualCard = toggleManualCard;
@@ -2750,9 +2761,10 @@ function manualSelectAll(){
   const s = getSet(currentSetId);
   if(!s) return;
   const visible = manualFilterCategory==='alle' ? s.cards : s.cards.filter(c => (c.difficulty||'neu')===manualFilterCategory);
-  if(!manualSelections[s.id]) manualSelections[s.id] = [];
-  const arr = manualSelections[s.id];
+  if(!appData.manualSelections[s.id]) appData.manualSelections[s.id] = [];
+  const arr = appData.manualSelections[s.id];
   visible.forEach(c=>{ if(!arr.includes(c.id)) arr.push(c.id); });
+  persist();
   renderManualSelectScreen();
 }
 window.manualSelectAll = manualSelectAll;
@@ -2762,8 +2774,9 @@ function manualSelectNone(){
   if(!s) return;
   const visible = manualFilterCategory==='alle' ? s.cards : s.cards.filter(c => (c.difficulty||'neu')===manualFilterCategory);
   const visibleIds = visible.map(c=>c.id);
-  if(!manualSelections[s.id]) manualSelections[s.id] = [];
-  manualSelections[s.id] = manualSelections[s.id].filter(id => !visibleIds.includes(id));
+  if(!appData.manualSelections[s.id]) appData.manualSelections[s.id] = [];
+  appData.manualSelections[s.id] = appData.manualSelections[s.id].filter(id => !visibleIds.includes(id));
+  persist();
   renderManualSelectScreen();
 }
 window.manualSelectNone = manualSelectNone;
@@ -3070,7 +3083,12 @@ function buildListPrintHtml(s, cards){
   return `<h1>${escapeHtml(s.name)} (${srcName} → ${tgtName})</h1>${rowsHtml}`;
 }
 
+let printTapBlocked = false;
+
 function triggerPrint(btnId, contentId){
+  if(printTapBlocked) return; // verhindert doppeltes Antippen während der Wartezeit
+  printTapBlocked = true;
+
   const btn = document.getElementById(btnId);
   const contentEl = contentId ? document.getElementById(contentId) : null;
   let originalHtml = null;
@@ -3083,11 +3101,12 @@ function triggerPrint(btnId, contentId){
   }
   window.print();
   const resetBtn = () => {
+    printTapBlocked = false;
     if(btn) btn.classList.remove('loading-spin');
     if(contentEl && originalHtml !== null) contentEl.innerHTML = originalHtml;
   };
   window.addEventListener('afterprint', resetBtn, { once:true });
-  setTimeout(resetBtn, 65000); // Sicherheitsnetz, falls afterprint nie feuert
+  setTimeout(resetBtn, 75000); // Sicherheitsnetz, falls afterprint nie feuert
 }
 
 function printList(){
