@@ -459,7 +459,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 2026-08-23 19:45 (Beispielsätze im Karten-Editor)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 2026-08-24 (Bearbeiten-Liste Refresh-Fix)</div>
   </div>
 
   <!-- HOME -->
@@ -491,7 +491,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 2026-08-23 19:45 (Beispielsätze im Karten-Editor)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 2026-08-24 (Bearbeiten-Liste Refresh-Fix)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
@@ -871,6 +871,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
       Set umbenennen
     </div>
+    <div class="action-menu-item" onclick="closeSetActionsMenu(); openSetLanguages()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.5 6 3.5 9s-1 6.5-3.5 9c-2.5-2.5-3.5-6-3.5-9s1-6.5 3.5-9Z"/></svg>
+      Set Sprachen
+    </div>
     <div class="action-menu-item" onclick="closeSetActionsMenu(); openCsvImport()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg>
       CSV aus Text einfügen
@@ -899,6 +903,24 @@
     <div class="overlay-actions-row">
       <button onclick="closeRenameSet()">Abbrechen</button>
       <button class="primary" onclick="saveRenameSet()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="setLanguagesOverlay">
+  <div class="rename-overlay-box">
+    <h3>Sprachen ändern</h3>
+    <div class="field" style="margin-bottom:18px;">
+      <label>Ausgangssprache (Vorderseite)</label>
+      <div class="lang-grid" id="editSetSourceGrid"></div>
+    </div>
+    <div class="field" style="margin-bottom:8px;">
+      <label>Zielsprache (Rückseite)</label>
+      <div class="lang-grid" id="editSetTargetGrid"></div>
+    </div>
+    <div class="overlay-actions-row">
+      <button onclick="closeSetLanguages()">Abbrechen</button>
+      <button class="primary" onclick="saveSetLanguages()">Speichern</button>
     </div>
   </div>
 </div>
@@ -1742,6 +1764,65 @@ function pickLang(kind, key){
   renderLangGrid('newSetTargetGrid','target');
 }
 window.pickLang = pickLang;
+
+/* ---- Set-Sprachen ändern (bestehendes Set) ---- */
+let editSetSourceLang = 'DE';
+let editSetTargetLang = 'ES';
+
+function openSetLanguages(){
+  const s = getSet(currentSetId);
+  if(!s) return;
+  editSetSourceLang = s.source;
+  editSetTargetLang = s.target;
+  renderEditLangGrid('editSetSourceGrid', 'source');
+  renderEditLangGrid('editSetTargetGrid', 'target');
+  document.getElementById('setLanguagesOverlay').classList.add('show');
+}
+window.openSetLanguages = openSetLanguages;
+
+function closeSetLanguages(){
+  document.getElementById('setLanguagesOverlay').classList.remove('show');
+}
+window.closeSetLanguages = closeSetLanguages;
+
+function renderEditLangGrid(containerId, kind){
+  const c = document.getElementById(containerId);
+  c.innerHTML = LANG_KEYS.map(k=>{
+    const active = (kind==='source' ? editSetSourceLang : editSetTargetLang) === k;
+    return `<div class="lang-opt ${active?'active':''}" onclick="pickEditLang('${kind}','${k}')">
+      <span class="flag">${LANGS[k].flag}</span> ${LANGS[k].name}
+    </div>`;
+  }).join('');
+}
+function pickEditLang(kind, key){
+  if(kind==='source') editSetSourceLang = key; else editSetTargetLang = key;
+  renderEditLangGrid('editSetSourceGrid','source');
+  renderEditLangGrid('editSetTargetGrid','target');
+}
+window.pickEditLang = pickEditLang;
+
+function saveSetLanguages(){
+  const s = getSet(currentSetId);
+  if(!s) return;
+  const doSave = ()=>{
+    s.source = editSetSourceLang;
+    s.target = editSetTargetLang;
+    persist();
+    closeSetLanguages();
+    document.getElementById('detailFlagSrc').textContent = LANGS[s.source].flag;
+    document.getElementById('detailLangSrc').textContent = LANGS[s.source].name;
+    document.getElementById('detailFlagTgt').textContent = LANGS[s.target].flag;
+    document.getElementById('detailLangTgt').textContent = LANGS[s.target].name;
+    showToast("Sprachen aktualisiert");
+  };
+  if(editSetSourceLang === editSetTargetLang){
+    showTwoChoice(`Ausgangs- und Zielsprache sind beide „${LANGS[editSetSourceLang].name}". Trotzdem fortfahren?`,
+      'Fortfahren', 'Abbrechen', doSave);
+    return;
+  }
+  doSave();
+}
+window.saveSetLanguages = saveSetLanguages;
 
 function createSet(){
   const name = document.getElementById('newSetName').value.trim();
@@ -3300,6 +3381,7 @@ function go(id){
   try{
     if(id === 'view-learn-setup'){ openLearnSetup(); return; }
     if(id === 'view-flashcard-setup'){ openFlashcardSetup(); return; }
+    if(id === 'view-edit-list'){ renderSetList(); switchScreen(id); return; }
     if(id === 'view-settings'){ renderTrash(); switchScreen(id); return; }
     if(id === 'view-duplicates'){ renderDuplicates(); switchScreen(id); return; }
     if(id === 'view-spellcheck'){ spellCheckResults=[]; document.getElementById('spellCheckContainer').innerHTML=''; switchScreen(id); return; }
