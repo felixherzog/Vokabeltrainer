@@ -459,7 +459,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 2026-08-23 19:15 (Manuelle Auswahl synct jetzt)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 2026-08-23 19:45 (Beispielsätze im Karten-Editor)</div>
   </div>
 
   <!-- HOME -->
@@ -491,7 +491,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 2026-08-23 19:15 (Manuelle Auswahl synct jetzt)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 2026-08-23 19:45 (Beispielsätze im Karten-Editor)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
@@ -985,6 +985,14 @@
     <div class="col">
       <div class="tag"><span id="cardEditFlagTgt"></span> <span id="cardEditLangTgt"></span></div>
       <input type="text" id="cardEditTarget">
+    </div>
+    <div class="col">
+      <div class="tag">Beispielsatz (optional)</div>
+      <input type="text" id="cardEditExampleSource">
+    </div>
+    <div class="col">
+      <div class="tag">Beispielsatz (optional)</div>
+      <input type="text" id="cardEditExampleTarget">
     </div>
     <div class="edit-overlay-actions">
       <div class="row">
@@ -1738,13 +1746,23 @@ window.pickLang = pickLang;
 function createSet(){
   const name = document.getElementById('newSetName').value.trim();
   if(!name){ showToast("Bitte einen Namen eingeben"); return; }
-  if(newSetSource === newSetTarget){ showToast("Ausgangs- und Zielsprache müssen sich unterscheiden"); return; }
+  if(newSetSource === newSetTarget){
+    showTwoChoice(`Ausgangs- und Zielsprache sind beide „${LANGS[newSetSource].name}". Trotzdem fortfahren?`,
+      'Fortfahren', 'Abbrechen',
+      ()=> createSetConfirmed(name)
+    );
+    return;
+  }
+  createSetConfirmed(name);
+}
+window.createSet = createSet;
+
+function createSetConfirmed(name){
   const set = { id: uid(), name, source: newSetSource, target: newSetTarget, cards: [] };
   appData.learnSets.push(set);
   persist();
   openSetDetail(set.id);
 }
-window.createSet = createSet;
 
 /* ============ SET DETAIL (edit words) ============ */
 function openSetDetail(id){
@@ -2993,6 +3011,8 @@ function openCardEditor(){
   document.getElementById('cardEditLangTgt').textContent = LANGS[s.target].name;
   document.getElementById('cardEditSource').value = card.source;
   document.getElementById('cardEditTarget').value = card.target;
+  document.getElementById('cardEditExampleSource').value = card.exampleSource || '';
+  document.getElementById('cardEditExampleTarget').value = card.exampleTarget || '';
   document.getElementById('cardEditOverlay').classList.add('show');
 }
 window.openCardEditor = openCardEditor;
@@ -3007,9 +3027,13 @@ function saveCardEditFromSession(){
   if(!card) return;
   const src = document.getElementById('cardEditSource').value.trim();
   const tgt = document.getElementById('cardEditTarget').value.trim();
+  const exSrc = document.getElementById('cardEditExampleSource').value.trim();
+  const exTgt = document.getElementById('cardEditExampleTarget').value.trim();
   if(!src || !tgt){ showToast("Bitte beide Wörter ausfüllen"); return; }
   card.source = src;
   card.target = tgt;
+  card.exampleSource = exSrc;
+  card.exampleTarget = exTgt;
   persist();
   closeCardEditor();
   renderSessionCard();
