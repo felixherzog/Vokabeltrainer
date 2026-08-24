@@ -386,6 +386,8 @@
   .modal-overlay.show .edit-overlay-box{transform:scale(1);}
   .edit-overlay-box h3{font-size:16px;margin:0 0 16px;text-align:center;}
   .edit-overlay-box .col{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+  .csv-overlay-box .col{display:flex;flex-direction:column;gap:6px;}
+  .csv-overlay-box .tag{font-size:11px;color:var(--text-dim);display:flex;align-items:center;gap:5px;margin-bottom:2px;}
   .edit-overlay-box .col .tag{font-size:11px;color:var(--text-dim);display:flex;align-items:center;gap:5px;}
   .edit-overlay-box input{width:100%;background:var(--panel-2);border:1px solid var(--border);border-radius:12px;
     padding:13px 14px;color:var(--text);font-size:16px;}
@@ -463,7 +465,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 24.08.2026 15:20 (Bemerkungsfeld hinzugefügt)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 24.08.2026 16:10 (Bearbeiten-Liste: kombiniertes Bemerkungs-i)</div>
   </div>
 
   <!-- HOME -->
@@ -495,7 +497,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 24.08.2026 15:20 (Bemerkungsfeld hinzugefügt)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 24.08.2026 16:10 (Bearbeiten-Liste: kombiniertes Bemerkungs-i)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
@@ -941,6 +943,24 @@
     <div class="overlay-actions-row">
       <button onclick="closeNoteEditor()">Abbrechen</button>
       <button class="primary" onclick="saveNoteEditor()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="cardNotesPopup">
+  <div class="csv-overlay-box">
+    <h3>Bemerkungen</h3>
+    <div class="col" style="margin-bottom:14px;">
+      <div class="tag"><span id="cardNotesFlagSrc"></span> <span id="cardNotesLangSrc"></span></div>
+      <textarea id="cardNotesTextSource" placeholder="Bemerkung (optional)" style="min-height:110px;"></textarea>
+    </div>
+    <div class="col">
+      <div class="tag"><span id="cardNotesFlagTgt"></span> <span id="cardNotesLangTgt"></span></div>
+      <textarea id="cardNotesTextTarget" placeholder="Bemerkung (optional)" style="min-height:110px;"></textarea>
+    </div>
+    <div class="overlay-actions-row" style="margin-top:14px;">
+      <button onclick="closeCardNotesPopup()">Abbrechen</button>
+      <button class="primary" onclick="saveCardNotesPopup()">Speichern</button>
     </div>
   </div>
 </div>
@@ -2299,13 +2319,14 @@ function renderCardList(){
     const diffBadge = `<span class="diff-badge ${diff}" onclick="cycleDifficulty('${card.id}')">${diff}</span>`;
     const exSrc = card.exampleSource ? `<div class="w-example">${escapeHtml(card.exampleSource)}</div>` : '';
     const exTgt = card.exampleTarget ? `<div class="w-example">${escapeHtml(card.exampleTarget)}</div>` : '';
-    const noteSrcBadge = `<span class="note-badge ${card.noteSource?'has-note':''}" onclick="openCardNoteEditor('${card.id}','source')">i</span>`;
-    const noteTgtBadge = `<span class="note-badge ${card.noteTarget?'has-note':''}" onclick="openCardNoteEditor('${card.id}','target')">i</span>`;
+    const hasNote = !!(card.noteSource || card.noteTarget);
+    const noteBadge = hasNote ? `<span class="note-badge has-note" onclick="openCardNotesPopup('${card.id}')">i</span>` : '';
     return `<div class="card-list-item">
       <div class="words">
-        <div class="w1">${escapeHtml(card.source)} ${noteSrcBadge}</div>${exSrc}
-        <div class="w2">${escapeHtml(card.target)} ${noteTgtBadge}</div>${exTgt}
+        <div class="w1">${escapeHtml(card.source)}</div>${exSrc}
+        <div class="w2">${escapeHtml(card.target)}</div>${exTgt}
       </div>
+      ${noteBadge}
       ${diffBadge}
       <div class="row-actions">
         <div class="edit-btn" onclick="editCard('${card.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></div>
@@ -2366,6 +2387,42 @@ function openCardNoteEditor(cardId, kind){
   document.getElementById('noteEditorOverlay').classList.add('show');
 }
 window.openCardNoteEditor = openCardNoteEditor;
+
+let cardNotesPopupCardId = null;
+
+function openCardNotesPopup(cardId){
+  const s = getSet(currentSetId);
+  if(!s) return;
+  const card = s.cards.find(c=>c.id===cardId);
+  if(!card) return;
+  cardNotesPopupCardId = cardId;
+  document.getElementById('cardNotesFlagSrc').textContent = LANGS[s.source].flag;
+  document.getElementById('cardNotesLangSrc').textContent = LANGS[s.source].name;
+  document.getElementById('cardNotesFlagTgt').textContent = LANGS[s.target].flag;
+  document.getElementById('cardNotesLangTgt').textContent = LANGS[s.target].name;
+  document.getElementById('cardNotesTextSource').value = card.noteSource || '';
+  document.getElementById('cardNotesTextTarget').value = card.noteTarget || '';
+  document.getElementById('cardNotesPopup').classList.add('show');
+}
+window.openCardNotesPopup = openCardNotesPopup;
+
+function closeCardNotesPopup(){
+  document.getElementById('cardNotesPopup').classList.remove('show');
+}
+window.closeCardNotesPopup = closeCardNotesPopup;
+
+function saveCardNotesPopup(){
+  const s = getSet(currentSetId);
+  const card = s && s.cards.find(c=>c.id===cardNotesPopupCardId);
+  if(card){
+    card.noteSource = document.getElementById('cardNotesTextSource').value.trim();
+    card.noteTarget = document.getElementById('cardNotesTextTarget').value.trim();
+    persist();
+    renderCardList();
+  }
+  closeCardNotesPopup();
+}
+window.saveCardNotesPopup = saveCardNotesPopup;
 
 function closeNoteEditor(){
   document.getElementById('noteEditorOverlay').classList.remove('show');
