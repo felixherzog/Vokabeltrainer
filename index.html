@@ -281,10 +281,11 @@
   .icon-btn.rf-true{color:var(--green);border-color:var(--green-dim);}
   .icon-btn:disabled{opacity:.3;}
 
-  .diff-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:8px;}
+  .diff-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:8px;}
   .diff-row.rf-row{grid-template-columns:1fr 1fr;}
   .diff-btn{padding:15px 6px;border-radius:14px;border:1px solid var(--border);background:var(--panel);
     font-weight:700;font-size:14px;cursor:pointer;color:var(--text);}
+  .diff-btn.neu{color:var(--blue);}
   .diff-btn.leicht{color:var(--green);}
   .diff-btn.mittel{color:var(--amber);}
   .diff-btn.schwer{color:var(--red);}
@@ -467,7 +468,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 25.08.2026 14:50 (Druckbutton grau + Sekunden-Timer)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 25.08.2026 15:30 (Kategorie-Anzeige + Neu-Button beim Lernen)</div>
   </div>
 
   <!-- HOME -->
@@ -499,7 +500,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 25.08.2026 14:50 (Druckbutton grau + Sekunden-Timer)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 25.08.2026 15:30 (Kategorie-Anzeige + Neu-Button beim Lernen)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
@@ -807,6 +808,7 @@
     <div class="flashcard-wrap">
       <div class="flashcard" id="flashcard" onclick="flipCard()">
         <span class="flagtag" id="cardFlag">🇩🇪</span>
+        <span class="diff-badge" id="cardDiffBadge" style="position:absolute;top:16px;left:56px;"></span>
         <div class="card-edit-btn" onclick="event.stopPropagation(); openCardEditor()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></div>
         <div class="word" id="cardWord">Wort</div>
         <span class="note-badge hidden" id="cardNoteBadge" onclick="event.stopPropagation(); viewCurrentCardNote()" style="position:absolute;top:16px;right:56px;width:22px;height:22px;font-size:13px;">i</span>
@@ -828,6 +830,7 @@
     </div>
 
     <div class="diff-row" id="diffRow" style="visibility:hidden;">
+      <button class="diff-btn neu" onclick="rateCard('neu')">Neu</button>
       <button class="diff-btn leicht" onclick="rateCard('leicht')">Einfach</button>
       <button class="diff-btn mittel" onclick="rateCard('mittel')">Mittel</button>
       <button class="diff-btn schwer" onclick="rateCard('schwer')">Schwer</button>
@@ -3165,6 +3168,7 @@ function renderSessionCard(){
   document.getElementById('progressFill').style.width = `${(index/cards.length)*100}%`;
   document.getElementById('cardFlag').textContent = LANGS[frontLang].flag;
   document.getElementById('cardWord').textContent = frontWord;
+  updateCardDiffBadge();
   document.getElementById('cardSub').textContent = "";
   document.getElementById('tapInfo').textContent = "Tippen, um Lösung zu zeigen";
   document.getElementById('flashcard').classList.remove('flipped');
@@ -3234,6 +3238,19 @@ function viewCurrentCardNote(){
   document.getElementById('noteEditorOverlay').classList.add('show');
 }
 window.viewCurrentCardNote = viewCurrentCardNote;
+
+function updateCardDiffBadge(){
+  const badge = document.getElementById('cardDiffBadge');
+  if(!badge) return;
+  const card = session.cards[session.index];
+  if(!card){ badge.textContent = ''; return; }
+  const diff = card.difficulty || 'neu';
+  badge.textContent = diff;
+  badge.className = `diff-badge ${diff}`;
+  badge.style.position = 'absolute';
+  badge.style.top = '16px';
+  badge.style.left = '56px';
+}
 
 function updateCardExampleDisplay(example){
   const box = document.getElementById('cardExample');
