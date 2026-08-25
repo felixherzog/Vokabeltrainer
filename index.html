@@ -162,6 +162,7 @@
     padding:18px;font-size:17px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;
     cursor:pointer;}
   .btn-primary:disabled{opacity:.35;}
+  .btn-primary.loading-gray{background:var(--panel-2);color:var(--text-dim);cursor:default;}
   .btn-primary svg{width:16px;height:16px;}
   .btn-secondary{width:100%;background:var(--panel-2);color:var(--text);border:1px solid var(--border);
     border-radius:16px;padding:15px;font-size:15px;font-weight:700;cursor:pointer;}
@@ -466,7 +467,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 25.08.2026 13:45 (i-Grösse/Position angepasst)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 25.08.2026 14:50 (Druckbutton grau + Sekunden-Timer)</div>
   </div>
 
   <!-- HOME -->
@@ -498,7 +499,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 25.08.2026 13:45 (i-Grösse/Position angepasst)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 25.08.2026 14:50 (Druckbutton grau + Sekunden-Timer)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
@@ -774,7 +775,7 @@
         Drucken
       </span>
     </button>
-    <div style="text-align:center;font-size:12px;color:var(--text-dim);margin-top:10px;line-height:1.5;">Hinweis: Nach dem Antippen kann es bis zu 1 Minute dauern, bis der Druckdialog erscheint (Sicherheitsfunktion von Safari).</div>
+    <div style="text-align:center;font-size:12px;color:var(--text-dim);margin-top:10px;line-height:1.5;">Hinweis: Nach dem Antippen kann es bis zu 2 Minuten dauern, bis der Druckdialog erscheint (Sicherheitsfunktion von Safari).</div>
   </div>
 
   <!-- WÖRTER MANUELL AUSWÄHLEN -->
@@ -2732,7 +2733,7 @@ function openFlashcardSetup(){
   printTapBlocked = false;
   const btn = document.getElementById('fcPrintBtn');
   const contentEl = document.getElementById('fcPrintBtnContent');
-  if(btn) btn.classList.remove('loading-spin');
+  if(btn){ btn.classList.remove('loading-spin'); btn.classList.remove('loading-gray'); }
   if(contentEl){
     contentEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg> Drucken`;
   }
@@ -3467,21 +3468,30 @@ function triggerPrint(btnId, contentId){
   const btn = document.getElementById(btnId);
   const contentEl = contentId ? document.getElementById(contentId) : null;
   let originalHtml = null;
-  if(btn) btn.classList.add('loading-spin');
+  let tickTimer = null;
+
   if(contentEl){
     originalHtml = contentEl.innerHTML;
-    contentEl.innerHTML = 'Wird vorbereitet… (bis zu 1 Min.)';
+    if(btn) btn.classList.add('loading-gray');
+    let seconds = 0;
+    contentEl.textContent = `Druck wird vorbereitet, kann bis 2 Min. dauern (0s)`;
+    tickTimer = setInterval(()=>{
+      seconds++;
+      contentEl.textContent = `Druck wird vorbereitet, kann bis 2 Min. dauern (${seconds}s)`;
+    }, 1000);
   } else {
+    if(btn) btn.classList.add('loading-spin');
     showToast("Druckansicht wird vorbereitet – iOS fragt gleich um Erlaubnis…");
   }
   window.print();
   const resetBtn = () => {
     printTapBlocked = false;
-    if(btn) btn.classList.remove('loading-spin');
+    if(tickTimer) clearInterval(tickTimer);
+    if(btn){ btn.classList.remove('loading-spin'); btn.classList.remove('loading-gray'); }
     if(contentEl && originalHtml !== null) contentEl.innerHTML = originalHtml;
   };
   window.addEventListener('afterprint', resetBtn, { once:true });
-  setTimeout(resetBtn, 75000); // Sicherheitsnetz, falls afterprint nie feuert
+  setTimeout(resetBtn, 120000); // Sicherheitsnetz, falls afterprint nie feuert
 }
 
 function printList(){
