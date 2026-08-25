@@ -83,6 +83,15 @@
     cursor:pointer;}
   .select-pill svg{width:16px;height:16px;}
 
+  .search-pill{display:flex;align-items:center;gap:8px;background:var(--panel-2);border:1px solid var(--border);
+    border-radius:14px;padding:10px 12px;margin-bottom:16px;}
+  .search-pill .search-icon{width:18px;height:18px;color:var(--text-dim);flex-shrink:0;}
+  .search-pill input{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:16px;
+    min-width:0;padding:0;}
+  .search-pill input::placeholder{color:var(--text-dim);}
+  .search-clear{width:20px;height:20px;flex-shrink:0;cursor:pointer;color:var(--text-dim);display:flex;}
+  .search-clear svg{width:20px;height:20px;}
+
   .select-native-wrap{position:relative;width:100%;}
   .select-native-wrap select{width:100%;background:var(--green);color:#00230d;border:none;border-radius:16px;
     padding:16px 44px 16px 18px;font-size:17px;font-weight:700;-webkit-appearance:none;appearance:none;
@@ -482,7 +491,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 25.08.2026 19:40 (Bemerkung: 1 formatierbares Feld mit Farben)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 25.08.2026 20:30 (i-Symbol auf Karteikarte immer sichtbar)</div>
   </div>
 
   <!-- HOME -->
@@ -514,7 +523,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 25.08.2026 19:40 (Bemerkung: 1 formatierbares Feld mit Farben)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 25.08.2026 20:30 (i-Symbol auf Karteikarte immer sichtbar)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
@@ -594,6 +603,12 @@
       </button>
       <button class="btn-primary" style="padding:13px" id="addOrUpdateBtn" onclick="addCard()">Wort hinzufügen</button>
       <button class="btn-ghost hidden" id="cancelEditBtn" style="padding:4px;" onclick="cancelEditCard()">Bearbeitung abbrechen</button>
+    </div>
+
+    <div class="search-pill">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" id="cardSearchInput" placeholder="Suchen…" oninput="onCardSearchInput()">
+      <span class="search-clear hidden" id="cardSearchClear" onclick="clearCardSearch()"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><path d="M9.17 9.17 14.83 14.83M14.83 9.17 9.17 14.83" stroke="#0b0b0d" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg></span>
     </div>
 
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;margin:0 0 14px 4px;gap:10px;">
@@ -823,9 +838,9 @@
       <div class="flashcard" id="flashcard" onclick="flipCard()">
         <span class="flagtag" id="cardFlag">🇩🇪</span>
         <span class="diff-badge" id="cardDiffBadge" style="position:absolute;top:16px;left:56px;"></span>
+        <span class="note-badge" id="cardNoteBadge" onclick="event.stopPropagation(); viewCurrentCardNote()" style="position:absolute;top:14px;right:56px;width:32px;height:32px;font-size:16px;">i</span>
         <div class="card-edit-btn" onclick="event.stopPropagation(); openCardEditor()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></div>
         <div class="word" id="cardWord">Wort</div>
-        <span class="note-badge hidden" id="cardNoteBadge" onclick="event.stopPropagation(); viewCurrentCardNote()" style="position:absolute;top:16px;right:56px;width:22px;height:22px;font-size:13px;">i</span>
         <div class="sub" id="cardSub"></div>
         <div class="card-example hidden" id="cardExample" onclick="event.stopPropagation();">
           <span id="cardExampleText"></span>
@@ -1917,6 +1932,11 @@ function openSetDetail(id){
   const s = getSet(id);
   if(!s) return;
   cardDifficultyFilter = 'alle';
+  cardSearchQuery = '';
+  const searchInput = document.getElementById('cardSearchInput');
+  if(searchInput) searchInput.value = '';
+  const searchClear = document.getElementById('cardSearchClear');
+  if(searchClear) searchClear.classList.add('hidden');
   document.getElementById('setDetailTitle').textContent = s.name;
   document.getElementById('detailFlagSrc').textContent = LANGS[s.source].flag;
   document.getElementById('detailLangSrc').textContent = LANGS[s.source].name;
@@ -2320,13 +2340,40 @@ function selectCardDifficultyFilter(val){
 }
 window.selectCardDifficultyFilter = selectCardDifficultyFilter;
 
+let cardSearchQuery = '';
+
+function onCardSearchInput(){
+  cardSearchQuery = document.getElementById('cardSearchInput').value;
+  document.getElementById('cardSearchClear').classList.toggle('hidden', cardSearchQuery.length===0);
+  renderCardList();
+}
+window.onCardSearchInput = onCardSearchInput;
+
+function clearCardSearch(){
+  cardSearchQuery = '';
+  document.getElementById('cardSearchInput').value = '';
+  document.getElementById('cardSearchClear').classList.add('hidden');
+  renderCardList();
+  document.getElementById('cardSearchInput').focus();
+}
+window.clearCardSearch = clearCardSearch;
+
 function renderCardList(){
   const s = getSet(currentSetId);
   if(!s) return;
   document.getElementById('cardCount').textContent = s.cards.length;
   renderCardDifficultyFilter();
   const c = document.getElementById('cardListContainer');
-  const visible = cardDifficultyFilter==='alle' ? s.cards : s.cards.filter(card => (card.difficulty||'neu')===cardDifficultyFilter);
+  let visible = cardDifficultyFilter==='alle' ? s.cards : s.cards.filter(card => (card.difficulty||'neu')===cardDifficultyFilter);
+  const q = cardSearchQuery.trim().toLowerCase();
+  if(q){
+    visible = visible.filter(card =>
+      (card.source||'').toLowerCase().includes(q) ||
+      (card.target||'').toLowerCase().includes(q) ||
+      (card.exampleSource||'').toLowerCase().includes(q) ||
+      (card.exampleTarget||'').toLowerCase().includes(q)
+    );
+  }
   if(s.cards.length===0){
     c.innerHTML = `<div class="empty" style="padding:36px 16px;"><div class="ic">✍️</div><p>Noch keine Wörter erfasst</p></div>`;
     return;
@@ -3157,13 +3204,7 @@ function updateCardNoteBadgeDisplay(){
   const badge = document.getElementById('cardNoteBadge');
   if(!badge) return;
   const card = session.cards[session.index];
-  if(!card || isNoteEmpty(card.note)){
-    badge.classList.add('hidden');
-    badge.classList.remove('has-note');
-  } else {
-    badge.classList.remove('hidden');
-    badge.classList.add('has-note');
-  }
+  badge.classList.toggle('has-note', !!(card && !isNoteEmpty(card.note)));
 }
 
 function viewCurrentCardNote(){
