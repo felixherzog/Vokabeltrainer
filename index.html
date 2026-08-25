@@ -203,9 +203,9 @@
   .word-inputs .col{display:flex;flex-direction:column;gap:6px;}
   .word-inputs .col .tag{font-size:11px;color:var(--text-dim);display:flex;align-items:center;gap:5px;}
   .note-badge{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;
-    border-radius:50%;background:var(--blue);color:#fff;font-size:10px;font-weight:800;font-style:italic;
+    border-radius:50%;background:var(--panel-2);color:var(--text-dim);border:1px solid var(--border);font-size:10px;font-weight:800;font-style:italic;
     font-family:Georgia,serif;cursor:pointer;flex-shrink:0;margin-left:auto;}
-  .note-badge.has-note{box-shadow:0 0 0 2px rgba(10,132,255,.35);}
+  .note-badge.has-note{background:var(--blue);color:#fff;border-color:var(--blue);}
   .word-inputs input{background:var(--panel-2);border:1px solid var(--border);border-radius:12px;
     padding:12px 12px;color:var(--text);font-size:15px;width:100%;}
   .word-inputs input:focus{outline:none;border-color:var(--green);}
@@ -466,7 +466,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 24.08.2026 16:30 (Bemerkungs-Popup breiter, Formular kombiniert)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 25.08.2026 11:20 (i immer sichtbar, grau/blau je nach Inhalt)</div>
   </div>
 
   <!-- HOME -->
@@ -498,7 +498,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 24.08.2026 16:30 (Bemerkungs-Popup breiter, Formular kombiniert)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 25.08.2026 11:20 (i immer sichtbar, grau/blau je nach Inhalt)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
@@ -549,7 +549,9 @@
       <div class="backbtn" onclick="openSetActionsMenu()"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></div>
     </div>
 
-    <div class="word-row">
+    <div class="word-row" style="position:relative;">
+      <span class="note-badge" id="noteBadgeTarget" onclick="openFormNotesPopup()"
+        style="position:absolute;top:16px;right:16px;width:26px;height:26px;font-size:15px;z-index:2;">i</span>
       <div class="word-inputs">
         <div class="col">
           <div class="tag"><span id="detailFlagSrc"></span> <span id="detailLangSrc"></span></div>
@@ -562,15 +564,11 @@
       </div>
       <div class="word-inputs">
         <div class="col">
-          <div class="tag">Beispielsatz (optional)
-            <span class="note-badge" id="noteBadgeSource" onclick="openFormNotesPopup()">i</span>
-          </div>
+          <div class="tag">Beispielsatz (optional)</div>
           <input type="text" id="inputExampleSource" placeholder="z. B. Der Tisch ist neu.">
         </div>
         <div class="col">
-          <div class="tag">Beispielsatz (optional)
-            <span class="note-badge" id="noteBadgeTarget" onclick="openFormNotesPopup()">i</span>
-          </div>
+          <div class="tag">Beispielsatz (optional)</div>
           <input type="text" id="inputExampleTarget" placeholder="z. B. La mesa es nueva.">
         </div>
       </div>
@@ -2339,7 +2337,7 @@ function renderCardList(){
     const exSrc = card.exampleSource ? `<div class="w-example">${escapeHtml(card.exampleSource)}</div>` : '';
     const exTgt = card.exampleTarget ? `<div class="w-example">${escapeHtml(card.exampleTarget)}</div>` : '';
     const hasNote = !!(card.noteSource || card.noteTarget);
-    const noteBadge = hasNote ? `<span class="note-badge has-note" onclick="openCardNotesPopup('${card.id}')">i</span>` : '';
+    const noteBadge = `<span class="note-badge ${hasNote?'has-note':''}" onclick="openCardNotesPopup('${card.id}')">i</span>`;
     return `<div class="card-list-item">
       <div class="words">
         <div class="w1">${escapeHtml(card.source)}</div>${exSrc}
@@ -2376,10 +2374,8 @@ let noteEditorKind = 'source';
 let noteEditorContext = { mode: 'form' };
 
 function updateNoteBadges(){
-  const srcBadge = document.getElementById('noteBadgeSource');
   const tgtBadge = document.getElementById('noteBadgeTarget');
-  if(srcBadge) srcBadge.classList.toggle('has-note', !!currentNoteSource);
-  if(tgtBadge) tgtBadge.classList.toggle('has-note', !!currentNoteTarget);
+  if(tgtBadge) tgtBadge.classList.toggle('has-note', !!(currentNoteSource || currentNoteTarget));
 }
 
 function openNoteEditor(kind){
