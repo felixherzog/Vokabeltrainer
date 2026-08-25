@@ -423,6 +423,7 @@
     border-radius:12px;padding:13px 14px;color:var(--text);font-size:14px;margin-bottom:10px;font-family:inherit;
     resize:vertical;}
   .csv-overlay-box textarea:focus{outline:none;border-color:var(--green);}
+  .notes-overlay-box{max-width:640px !important;}
   .csv-overlay-box .hint-text{font-size:12px;color:var(--text-dim);margin-bottom:16px;line-height:1.5;}
   .overlay-actions-row{display:flex;gap:10px;}
   .overlay-actions-row button{flex:1;padding:13px;border-radius:14px;font-size:15px;font-weight:700;
@@ -465,7 +466,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 24.08.2026 16:10 (Bearbeiten-Liste: kombiniertes Bemerkungs-i)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 24.08.2026 16:30 (Bemerkungs-Popup breiter, Formular kombiniert)</div>
   </div>
 
   <!-- HOME -->
@@ -497,7 +498,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 24.08.2026 16:10 (Bearbeiten-Liste: kombiniertes Bemerkungs-i)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 24.08.2026 16:30 (Bemerkungs-Popup breiter, Formular kombiniert)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
@@ -562,13 +563,13 @@
       <div class="word-inputs">
         <div class="col">
           <div class="tag">Beispielsatz (optional)
-            <span class="note-badge" id="noteBadgeSource" onclick="openNoteEditor('source')">i</span>
+            <span class="note-badge" id="noteBadgeSource" onclick="openFormNotesPopup()">i</span>
           </div>
           <input type="text" id="inputExampleSource" placeholder="z. B. Der Tisch ist neu.">
         </div>
         <div class="col">
           <div class="tag">Beispielsatz (optional)
-            <span class="note-badge" id="noteBadgeTarget" onclick="openNoteEditor('target')">i</span>
+            <span class="note-badge" id="noteBadgeTarget" onclick="openFormNotesPopup()">i</span>
           </div>
           <input type="text" id="inputExampleTarget" placeholder="z. B. La mesa es nueva.">
         </div>
@@ -936,6 +937,24 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="formNotesPopup">
+  <div class="csv-overlay-box notes-overlay-box">
+    <h3>Bemerkungen</h3>
+    <div class="col" style="margin-bottom:14px;">
+      <div class="tag"><span id="formNotesFlagSrc"></span> <span id="formNotesLangSrc"></span></div>
+      <textarea id="formNotesTextSource" placeholder="Bemerkung (optional)" style="min-height:110px;"></textarea>
+    </div>
+    <div class="col">
+      <div class="tag"><span id="formNotesFlagTgt"></span> <span id="formNotesLangTgt"></span></div>
+      <textarea id="formNotesTextTarget" placeholder="Bemerkung (optional)" style="min-height:110px;"></textarea>
+    </div>
+    <div class="overlay-actions-row" style="margin-top:14px;">
+      <button onclick="closeFormNotesPopup()">Abbrechen</button>
+      <button class="primary" onclick="saveFormNotesPopup()">Speichern</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="noteEditorOverlay">
   <div class="csv-overlay-box">
     <h3 id="noteEditorTitle">Bemerkung</h3>
@@ -948,7 +967,7 @@
 </div>
 
 <div class="modal-overlay" id="cardNotesPopup">
-  <div class="csv-overlay-box">
+  <div class="csv-overlay-box notes-overlay-box">
     <h3>Bemerkungen</h3>
     <div class="col" style="margin-bottom:14px;">
       <div class="tag"><span id="cardNotesFlagSrc"></span> <span id="cardNotesLangSrc"></span></div>
@@ -2373,6 +2392,32 @@ function openNoteEditor(kind){
   document.getElementById('noteEditorOverlay').classList.add('show');
 }
 window.openNoteEditor = openNoteEditor;
+
+function openFormNotesPopup(){
+  const s = getSet(currentSetId);
+  if(!s) return;
+  document.getElementById('formNotesFlagSrc').textContent = LANGS[s.source].flag;
+  document.getElementById('formNotesLangSrc').textContent = LANGS[s.source].name;
+  document.getElementById('formNotesFlagTgt').textContent = LANGS[s.target].flag;
+  document.getElementById('formNotesLangTgt').textContent = LANGS[s.target].name;
+  document.getElementById('formNotesTextSource').value = currentNoteSource;
+  document.getElementById('formNotesTextTarget').value = currentNoteTarget;
+  document.getElementById('formNotesPopup').classList.add('show');
+}
+window.openFormNotesPopup = openFormNotesPopup;
+
+function closeFormNotesPopup(){
+  document.getElementById('formNotesPopup').classList.remove('show');
+}
+window.closeFormNotesPopup = closeFormNotesPopup;
+
+function saveFormNotesPopup(){
+  currentNoteSource = document.getElementById('formNotesTextSource').value.trim();
+  currentNoteTarget = document.getElementById('formNotesTextTarget').value.trim();
+  updateNoteBadges();
+  closeFormNotesPopup();
+}
+window.saveFormNotesPopup = saveFormNotesPopup;
 
 function openCardNoteEditor(cardId, kind){
   const s = getSet(currentSetId);
