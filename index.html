@@ -449,7 +449,14 @@
   .note-editable:focus{outline:none;border-color:var(--green);}
   .note-editable:empty::before{content:attr(data-placeholder);color:var(--text-dim);}
   .note-editable ul{padding-left:22px;margin:8px 0;}
-  .note-editable img{max-width:100%;border-radius:8px;display:block;margin:6px 0;}
+  .note-editable img{max-width:100%;border-radius:8px;display:block;margin:6px 0;cursor:pointer;}
+  .note-editable img.img-selected{outline:3px solid var(--blue);outline-offset:2px;}
+
+  .note-imgsize-bar{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--blue);
+    border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:13px;color:var(--text-dim);}
+  .note-imgsize-bar button{background:var(--panel-2);border:1px solid var(--border);border-radius:8px;
+    padding:6px 12px;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;}
+  .note-imgsize-bar button:active{background:var(--blue);color:#fff;}
   .note-editable .note-pdf-link{display:inline-flex;align-items:center;gap:6px;background:var(--panel);
     border:1px solid var(--border);border-radius:10px;padding:8px 12px;color:var(--text);text-decoration:none;
     font-size:14px;margin:4px 0;}
@@ -459,6 +466,15 @@
     border-radius:10px;padding:8px 14px;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;}
   .note-attach-btn svg{width:16px;height:16px;}
   .note-attach-status{font-size:12px;color:var(--text-dim);}
+
+  .note-fullscreen-btn{position:absolute;top:14px;right:16px;width:28px;height:28px;border-radius:50%;
+    background:var(--panel-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
+    cursor:pointer;color:var(--text-dim);z-index:2;}
+  .note-fullscreen-btn svg{width:14px;height:14px;}
+  .notes-overlay-box.fullscreen{max-width:100vw !important;width:100vw;height:100vh;height:100dvh;
+    border-radius:0;display:flex;flex-direction:column;}
+  .notes-overlay-box.fullscreen .note-editable{flex:1;min-height:0;max-height:none;}
+  .modal-overlay:has(.notes-overlay-box.fullscreen){padding:0;align-items:stretch;justify-content:stretch;}
   .csv-overlay-box .hint-text{font-size:12px;color:var(--text-dim);margin-bottom:16px;line-height:1.5;}
   .overlay-actions-row{display:flex;gap:10px;}
   .overlay-actions-row button{flex:1;padding:13px;border-radius:14px;font-size:15px;font-weight:700;
@@ -501,7 +517,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 27.08.2026 16:35 (Foto/PDF-Anhang in Bemerkungen)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 27.08.2026 17:35 (Bildgrösse änderbar)</div>
   </div>
 
   <!-- HOME -->
@@ -533,7 +549,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 27.08.2026 16:35 (Foto/PDF-Anhang in Bemerkungen)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 27.08.2026 17:35 (Bildgrösse änderbar)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
@@ -979,7 +995,10 @@
 </div>
 
 <div class="modal-overlay" id="notePopup">
-  <div class="csv-overlay-box notes-overlay-box">
+  <div class="csv-overlay-box notes-overlay-box" id="notePopupBox" style="position:relative;">
+    <span class="note-fullscreen-btn" id="noteFullscreenBtn" onclick="toggleNoteFullscreen()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3m11-5v3a2 2 0 0 1-2 2h-3"/></svg>
+    </span>
     <h3>Bemerkung</h3>
     <div class="note-toolbar">
       <button type="button" onmousedown="event.preventDefault()" onclick="formatNote('bold')"><b>B</b></button>
@@ -992,7 +1011,14 @@
       <span class="note-color-dot" style="background:#0a84ff;" onmousedown="event.preventDefault()" onclick="formatNote('foreColor','#0a84ff')"></span>
       <span class="note-color-dot" style="background:#ffb020;" onmousedown="event.preventDefault()" onclick="formatNote('foreColor','#ffb020')"></span>
     </div>
-    <div id="noteEditableField" class="note-editable" contenteditable="true" data-placeholder="Bemerkung (optional) – z. B. Auf lateinamerikanischem Spanisch sagt man ..."></div>
+    <div id="noteEditableField" class="note-editable" contenteditable="true" data-placeholder="Bemerkung (optional) – z. B. Auf lateinamerikanischem Spanisch sagt man ..." onclick="handleNoteFieldClick(event)"></div>
+    <div class="note-imgsize-bar hidden" id="noteImgSizeBar">
+      <span>Bildgrösse:</span>
+      <button type="button" onclick="setSelectedImageSize(25)">S</button>
+      <button type="button" onclick="setSelectedImageSize(50)">M</button>
+      <button type="button" onclick="setSelectedImageSize(75)">L</button>
+      <button type="button" onclick="setSelectedImageSize(100)">Original</button>
+    </div>
     <div class="note-attach-row">
       <button type="button" class="note-attach-btn" onclick="saveNoteSelection(); document.getElementById('notePhotoInput').click()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10.5" r="1.5"/><path d="M21 15l-5-5L5 19"/></svg>
@@ -2462,6 +2488,7 @@ let noteEditorContext = { mode: 'form' };
 
 function isNoteEmpty(html){
   if(!html) return true;
+  if(/<img[\s>]|<a[\s>]/i.test(html)) return false;
   const stripped = html.replace(/<br\s*\/?>/gi,'').replace(/<[^>]+>/g,'').replace(/&nbsp;/g,'').trim();
   return stripped.length === 0;
 }
@@ -2476,6 +2503,48 @@ function formatNote(cmd, value){
   document.execCommand(cmd, false, value || null);
 }
 window.formatNote = formatNote;
+
+let selectedNoteImage = null;
+
+function handleNoteFieldClick(event){
+  const link = event.target.closest('a');
+  if(link && link.href){
+    event.preventDefault();
+    window.open(link.href, '_blank', 'noopener');
+    return;
+  }
+  const img = event.target.closest('img');
+  const bar = document.getElementById('noteImgSizeBar');
+  if(img){
+    if(selectedNoteImage && selectedNoteImage !== img) selectedNoteImage.classList.remove('img-selected');
+    selectedNoteImage = img;
+    img.classList.add('img-selected');
+    bar.classList.remove('hidden');
+  } else {
+    if(selectedNoteImage) selectedNoteImage.classList.remove('img-selected');
+    selectedNoteImage = null;
+    bar.classList.add('hidden');
+  }
+}
+window.handleNoteFieldClick = handleNoteFieldClick;
+
+function setSelectedImageSize(percent){
+  if(!selectedNoteImage) return;
+  selectedNoteImage.style.width = percent + '%';
+  selectedNoteImage.style.height = 'auto';
+  selectedNoteImage.style.maxWidth = '100%';
+}
+window.setSelectedImageSize = setSelectedImageSize;
+
+function toggleNoteFullscreen(){
+  const box = document.getElementById('notePopupBox');
+  const btn = document.getElementById('noteFullscreenBtn');
+  const isFull = box.classList.toggle('fullscreen');
+  btn.innerHTML = isFull
+    ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v4a2 2 0 0 1-2 2H3m18-6v4a2 2 0 0 0 2 2h-4M3 15h4a2 2 0 0 1 2 2v4m11-6h-4a2 2 0 0 0-2 2v4"/></svg>`
+    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3m11-5v3a2 2 0 0 1-2 2h-3"/></svg>`;
+}
+window.toggleNoteFullscreen = toggleNoteFullscreen;
 
 /* ---- Foto/PDF-Anhänge in Bemerkungen ---- */
 let savedNoteRange = null;
@@ -2578,15 +2647,22 @@ window.handleNotePdfSelect = handleNotePdfSelect;
 
 function openNotePopupWithText(html){
   document.getElementById('noteEditableField').innerHTML = html || '';
+  selectedNoteImage = null;
+  document.getElementById('noteImgSizeBar').classList.add('hidden');
   document.getElementById('notePopup').classList.add('show');
 }
 
 function closeNotePopup(){
   document.getElementById('notePopup').classList.remove('show');
+  const box = document.getElementById('notePopupBox');
+  if(box.classList.contains('fullscreen')) toggleNoteFullscreen();
+  selectedNoteImage = null;
+  document.getElementById('noteImgSizeBar').classList.add('hidden');
 }
 window.closeNotePopup = closeNotePopup;
 
 function saveNotePopup(){
+  if(selectedNoteImage) selectedNoteImage.classList.remove('img-selected');
   const html = document.getElementById('noteEditableField').innerHTML;
   const empty = isNoteEmpty(html);
   const finalHtml = empty ? '' : html;
