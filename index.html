@@ -449,6 +449,16 @@
   .note-editable:focus{outline:none;border-color:var(--green);}
   .note-editable:empty::before{content:attr(data-placeholder);color:var(--text-dim);}
   .note-editable ul{padding-left:22px;margin:8px 0;}
+  .note-editable img{max-width:100%;border-radius:8px;display:block;margin:6px 0;}
+  .note-editable .note-pdf-link{display:inline-flex;align-items:center;gap:6px;background:var(--panel);
+    border:1px solid var(--border);border-radius:10px;padding:8px 12px;color:var(--text);text-decoration:none;
+    font-size:14px;margin:4px 0;}
+
+  .note-attach-row{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+  .note-attach-btn{display:flex;align-items:center;gap:6px;background:var(--panel-2);border:1px solid var(--border);
+    border-radius:10px;padding:8px 14px;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;}
+  .note-attach-btn svg{width:16px;height:16px;}
+  .note-attach-status{font-size:12px;color:var(--text-dim);}
   .csv-overlay-box .hint-text{font-size:12px;color:var(--text-dim);margin-bottom:16px;line-height:1.5;}
   .overlay-actions-row{display:flex;gap:10px;}
   .overlay-actions-row button{flex:1;padding:13px;border-radius:14px;font-size:15px;font-weight:700;
@@ -491,7 +501,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 25.08.2026 20:30 (i-Symbol auf Karteikarte immer sichtbar)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 27.08.2026 16:35 (Foto/PDF-Anhang in Bemerkungen)</div>
   </div>
 
   <!-- HOME -->
@@ -523,7 +533,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 25.08.2026 20:30 (i-Symbol auf Karteikarte immer sichtbar)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 27.08.2026 16:35 (Foto/PDF-Anhang in Bemerkungen)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
@@ -983,6 +993,19 @@
       <span class="note-color-dot" style="background:#ffb020;" onmousedown="event.preventDefault()" onclick="formatNote('foreColor','#ffb020')"></span>
     </div>
     <div id="noteEditableField" class="note-editable" contenteditable="true" data-placeholder="Bemerkung (optional) – z. B. Auf lateinamerikanischem Spanisch sagt man ..."></div>
+    <div class="note-attach-row">
+      <button type="button" class="note-attach-btn" onclick="saveNoteSelection(); document.getElementById('notePhotoInput').click()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10.5" r="1.5"/><path d="M21 15l-5-5L5 19"/></svg>
+        Foto
+      </button>
+      <button type="button" class="note-attach-btn" onclick="saveNoteSelection(); document.getElementById('notePdfInput').click()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+        PDF
+      </button>
+      <span class="note-attach-status" id="noteAttachStatus"></span>
+      <input type="file" id="notePhotoInput" accept="image/*" class="hidden" onchange="handleNotePhotoSelect(event)">
+      <input type="file" id="notePdfInput" accept="application/pdf" class="hidden" onchange="handleNotePdfSelect(event)">
+    </div>
     <div class="overlay-actions-row" style="margin-top:14px;">
       <button onclick="closeNotePopup()">Abbrechen</button>
       <button class="primary" onclick="saveNotePopup()">Speichern</button>
@@ -1114,8 +1137,11 @@ const firebaseConfig = {
 
 let fbApp, db, docRef;
 let firebaseReady = false;
+let storageReady = false;
+let fbStorage;
 let suppressNextSnapshot = false;
 let fsSetDoc, fsOnSnapshot, fsCollection, fsGetDocs, fsGetDoc, fsDoc, fsUpdateDoc;
+let stRef, stUploadBytes, stGetDownloadURL, stDeleteObject;
 let unsubscribeProfile = null;
 
 async function loadFirebase(){
@@ -1135,6 +1161,18 @@ async function loadFirebase(){
   }catch(e){
     console.error("Firebase konnte nicht geladen werden (kein Netzwerk oder blockiert):", e);
     firebaseReady = false;
+  }
+  try{
+    const stMod = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js");
+    fbStorage = stMod.getStorage(fbApp);
+    stRef = stMod.ref;
+    stUploadBytes = stMod.uploadBytes;
+    stGetDownloadURL = stMod.getDownloadURL;
+    stDeleteObject = stMod.deleteObject;
+    storageReady = true;
+  }catch(e){
+    console.error("Firebase Storage konnte nicht geladen werden:", e);
+    storageReady = false;
   }
 }
 
@@ -2438,6 +2476,105 @@ function formatNote(cmd, value){
   document.execCommand(cmd, false, value || null);
 }
 window.formatNote = formatNote;
+
+/* ---- Foto/PDF-Anhänge in Bemerkungen ---- */
+let savedNoteRange = null;
+
+function saveNoteSelection(){
+  const field = document.getElementById('noteEditableField');
+  const sel = window.getSelection();
+  if(sel.rangeCount > 0){
+    const range = sel.getRangeAt(0);
+    if(field.contains(range.commonAncestorContainer)){
+      savedNoteRange = range.cloneRange();
+      return;
+    }
+  }
+  const r = document.createRange();
+  r.selectNodeContents(field);
+  r.collapse(false);
+  savedNoteRange = r;
+}
+window.saveNoteSelection = saveNoteSelection;
+
+function insertHtmlIntoNote(html){
+  const field = document.getElementById('noteEditableField');
+  field.focus();
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  if(savedNoteRange) sel.addRange(savedNoteRange);
+  document.execCommand('insertHTML', false, html);
+}
+
+function compressImageFile(file, maxDim, quality){
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      if(w > maxDim || h > maxDim){
+        if(w >= h){ h = Math.round(h * maxDim / w); w = maxDim; }
+        else { w = Math.round(w * maxDim / h); h = maxDim; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Komprimierung fehlgeschlagen')), 'image/jpeg', quality);
+    };
+    img.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
+    img.src = url;
+  });
+}
+
+async function uploadNoteFile(blob, ext){
+  if(!storageReady) throw new Error('Storage nicht verfügbar');
+  const path = `notes/${currentProfileId || 'shared'}/${uid()}.${ext}`;
+  const r = stRef(fbStorage, path);
+  await stUploadBytes(r, blob);
+  return stGetDownloadURL(r);
+}
+
+async function handleNotePhotoSelect(event){
+  const file = event.target.files[0];
+  event.target.value = '';
+  if(!file) return;
+  if(!storageReady){ showToast('Foto-Upload nicht verfügbar (kein Netzwerk?)'); return; }
+  const statusEl = document.getElementById('noteAttachStatus');
+  statusEl.textContent = 'Foto wird komprimiert…';
+  try{
+    const blob = await compressImageFile(file, 1600, 0.75);
+    statusEl.textContent = 'Foto wird hochgeladen…';
+    const url = await uploadNoteFile(blob, 'jpg');
+    insertHtmlIntoNote(`<img src="${url}" alt="Foto">`);
+    statusEl.textContent = '';
+  }catch(e){
+    console.error(e);
+    statusEl.textContent = '';
+    showToast('Foto-Upload fehlgeschlagen');
+  }
+}
+window.handleNotePhotoSelect = handleNotePhotoSelect;
+
+async function handleNotePdfSelect(event){
+  const file = event.target.files[0];
+  event.target.value = '';
+  if(!file) return;
+  if(!storageReady){ showToast('PDF-Upload nicht verfügbar (kein Netzwerk?)'); return; }
+  const statusEl = document.getElementById('noteAttachStatus');
+  statusEl.textContent = 'PDF wird hochgeladen…';
+  try{
+    const url = await uploadNoteFile(file, 'pdf');
+    const label = escapeHtml(file.name || 'PDF-Dokument');
+    insertHtmlIntoNote(`<a href="${url}" target="_blank" rel="noopener" class="note-pdf-link">📄 ${label}</a>`);
+    statusEl.textContent = '';
+  }catch(e){
+    console.error(e);
+    statusEl.textContent = '';
+    showToast('PDF-Upload fehlgeschlagen');
+  }
+}
+window.handleNotePdfSelect = handleNotePdfSelect;
 
 function openNotePopupWithText(html){
   document.getElementById('noteEditableField').innerHTML = html || '';
