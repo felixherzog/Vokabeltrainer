@@ -451,17 +451,16 @@
   .note-editable ul{padding-left:22px;margin:8px 0;}
   .note-editable img{max-width:100%;border-radius:8px;display:block;margin:6px 0;cursor:pointer;
     -webkit-touch-callout:none;-webkit-user-select:none;user-select:none;}
-  .note-editable img.img-selected{outline:3px solid var(--blue);outline-offset:2px;}
 
   .note-imgsize-bar{display:none;}
 
-  .note-img-menu{position:fixed;background:rgba(40,40,44,.98);border-radius:14px;overflow:hidden;
-    min-width:150px;box-shadow:0 8px 30px rgba(0,0,0,.5);z-index:2000;border:1px solid rgba(255,255,255,.1);}
-  .note-img-menu button{display:block;width:100%;text-align:left;padding:12px 16px;background:none;border:none;
-    color:var(--text);font-size:15px;cursor:pointer;}
-  .note-img-menu button:active{background:rgba(255,255,255,.1);}
-  .note-img-menu button.danger{color:var(--red);}
-  .note-img-menu-sep{height:1px;background:rgba(255,255,255,.12);}
+  .note-embed{display:block;margin:8px 0;}
+  .note-embed img{max-width:100%;border-radius:8px;display:block;}
+  .note-embed-controls{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;}
+  .note-embed-btn{background:var(--panel-2);border:1px solid var(--border);border-radius:8px;
+    padding:5px 11px;font-size:12px;font-weight:600;color:var(--text);cursor:pointer;}
+  .note-embed-btn.danger{color:var(--red);border-color:rgba(255,77,79,.4);}
+  .note-embed.pdf-embed{display:inline-flex;align-items:center;gap:8px;}
   .note-editable .note-pdf-link{display:inline-flex;align-items:center;gap:6px;background:var(--panel);
     border:1px solid var(--border);border-radius:10px;padding:8px 12px;color:var(--text);text-decoration:none;
     font-size:14px;margin:4px 0;}
@@ -522,7 +521,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 27.08.2026 21:00 (Bildmenü wie Notizen-App)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 27.08.2026 21:45 (Robuste Foto/PDF-Blöcke, iOS-fest)</div>
   </div>
 
   <!-- HOME -->
@@ -554,7 +553,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 27.08.2026 21:00 (Bildmenü wie Notizen-App)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 27.08.2026 21:45 (Robuste Foto/PDF-Blöcke, iOS-fest)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
@@ -1096,14 +1095,6 @@
 </div>
 
 <div id="printArea"></div>
-
-<div class="note-img-menu hidden" id="noteImgMenu">
-  <button type="button" onclick="setSelectedImageSize(25)">Klein</button>
-  <button type="button" onclick="setSelectedImageSize(50)">Mittel</button>
-  <button type="button" onclick="setSelectedImageSize(100)">Groß</button>
-  <div class="note-img-menu-sep"></div>
-  <button type="button" class="danger" onclick="deleteSelectedImage()">Löschen</button>
-</div>
 
 <div class="toast" id="toast"></div>
 
@@ -2510,8 +2501,6 @@ function formatNote(cmd, value){
 }
 window.formatNote = formatNote;
 
-let selectedNoteImage = null;
-
 function handleNoteFieldClick(event){
   const link = event.target.closest('a');
   if(link && link.href){
@@ -2519,52 +2508,24 @@ function handleNoteFieldClick(event){
     window.open(link.href, '_blank', 'noopener');
     return;
   }
-  const img = event.target.closest('img');
-  if(img){
-    event.preventDefault();
-    selectedNoteImage = img;
-    img.classList.add('img-selected');
-    showNoteImgMenu(img);
-  } else {
-    deselectNoteImage();
-  }
+  // Links/Bilder sind jetzt als contenteditable="false"-Embeds eingebettet und haben
+  // eigene, immer sichtbare Buttons (Grösse/Löschen) – kein Klick-Handling hier mehr nötig.
 }
 window.handleNoteFieldClick = handleNoteFieldClick;
 
-function showNoteImgMenu(img){
-  const menu = document.getElementById('noteImgMenu');
-  const rect = img.getBoundingClientRect();
-  menu.classList.remove('hidden');
-  const menuWidth = 160;
-  let left = rect.left + rect.width/2 - menuWidth/2;
-  left = Math.max(10, Math.min(left, window.innerWidth - menuWidth - 10));
-  let top = rect.bottom + 8;
-  if(top + 190 > window.innerHeight) top = rect.top - 190;
-  menu.style.left = left + 'px';
-  menu.style.top = top + 'px';
+function resizeEmbedImage(btn, percent){
+  const embed = btn.closest('.note-embed');
+  const img = embed && embed.querySelector('img');
+  if(img){ img.style.width = percent + '%'; img.style.height = 'auto'; img.style.maxWidth = '100%'; }
 }
+window.resizeEmbedImage = resizeEmbedImage;
 
-function deselectNoteImage(){
-  if(selectedNoteImage) selectedNoteImage.classList.remove('img-selected');
-  selectedNoteImage = null;
-  document.getElementById('noteImgMenu').classList.add('hidden');
+function deleteEmbed(btn){
+  const embed = btn.closest('.note-embed');
+  if(embed) embed.remove();
 }
-window.deselectNoteImage = deselectNoteImage;
+window.deleteEmbed = deleteEmbed;
 
-function deleteSelectedImage(){
-  if(selectedNoteImage) selectedNoteImage.remove();
-  deselectNoteImage();
-}
-window.deleteSelectedImage = deleteSelectedImage;
-
-function setSelectedImageSize(percent){
-  if(!selectedNoteImage) return;
-  selectedNoteImage.style.width = percent + '%';
-  selectedNoteImage.style.height = 'auto';
-  selectedNoteImage.style.maxWidth = '100%';
-  deselectNoteImage();
-}
-window.setSelectedImageSize = setSelectedImageSize;
 
 function toggleNoteFullscreen(){
   const box = document.getElementById('notePopupBox');
@@ -2645,7 +2606,7 @@ async function handleNotePhotoSelect(event){
     const blob = await compressImageFile(file, 1600, 0.75);
     statusEl.textContent = 'Foto wird hochgeladen…';
     const url = await uploadNoteFile(blob, 'jpg');
-    insertHtmlIntoNote(`<img src="${url}" alt="Foto">`);
+    insertHtmlIntoNote(`<span class="note-embed" contenteditable="false"><img src="${url}" alt="Foto"><span class="note-embed-controls"><button type="button" class="note-embed-btn" onclick="resizeEmbedImage(this,30)">Klein</button><button type="button" class="note-embed-btn" onclick="resizeEmbedImage(this,60)">Mittel</button><button type="button" class="note-embed-btn" onclick="resizeEmbedImage(this,100)">Groß</button><button type="button" class="note-embed-btn danger" onclick="deleteEmbed(this)">🗑 Löschen</button></span></span>`);
     statusEl.textContent = '';
   }catch(e){
     console.error(e);
@@ -2665,7 +2626,7 @@ async function handleNotePdfSelect(event){
   try{
     const url = await uploadNoteFile(file, 'pdf');
     const label = escapeHtml(file.name || 'PDF-Dokument');
-    insertHtmlIntoNote(`<a href="${url}" target="_blank" rel="noopener" class="note-pdf-link">📄 ${label}</a>`);
+    insertHtmlIntoNote(`<span class="note-embed pdf-embed" contenteditable="false"><a href="${url}" target="_blank" rel="noopener" class="note-pdf-link">📄 ${label}</a><button type="button" class="note-embed-btn danger" onclick="deleteEmbed(this)">🗑</button></span>`);
     statusEl.textContent = '';
   }catch(e){
     console.error(e);
@@ -2677,8 +2638,6 @@ window.handleNotePdfSelect = handleNotePdfSelect;
 
 function openNotePopupWithText(html){
   document.getElementById('noteEditableField').innerHTML = html || '';
-  selectedNoteImage = null;
-  document.getElementById('noteImgMenu').classList.add('hidden');
   document.getElementById('notePopup').classList.add('show');
 }
 
@@ -2686,13 +2645,10 @@ function closeNotePopup(){
   document.getElementById('notePopup').classList.remove('show');
   const box = document.getElementById('notePopupBox');
   if(box.classList.contains('fullscreen')) toggleNoteFullscreen();
-  selectedNoteImage = null;
-  document.getElementById('noteImgMenu').classList.add('hidden');
 }
 window.closeNotePopup = closeNotePopup;
 
 function saveNotePopup(){
-  if(selectedNoteImage) selectedNoteImage.classList.remove('img-selected');
   const html = document.getElementById('noteEditableField').innerHTML;
   const empty = isNoteEmpty(html);
   const finalHtml = empty ? '' : html;
