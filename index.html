@@ -449,21 +449,18 @@
   .note-editable:focus{outline:none;border-color:var(--green);}
   .note-editable:empty::before{content:attr(data-placeholder);color:var(--text-dim);}
   .note-editable ul{padding-left:22px;margin:8px 0;}
-  .note-editable img{max-width:100%;border-radius:8px;display:block;margin:6px 0;cursor:pointer;
-    -webkit-touch-callout:none;-webkit-user-select:none;user-select:none;}
 
-  .note-imgsize-bar{display:none;}
-
-  .note-embed{display:block;margin:8px 0;}
-  .note-embed img{max-width:100%;border-radius:8px;display:block;}
-  .note-embed-controls{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;}
-  .note-embed-btn{background:var(--panel-2);border:1px solid var(--border);border-radius:8px;
-    padding:5px 11px;font-size:12px;font-weight:600;color:var(--text);cursor:pointer;}
+  .note-attachments{display:flex;flex-direction:column;gap:10px;margin:12px 0;}
+  .note-attach-item{background:var(--panel-2);border:1px solid var(--border);border-radius:12px;padding:10px;}
+  .note-attach-item img{max-width:100%;border-radius:8px;display:block;margin-bottom:8px;}
+  .note-attach-item-controls{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+  .note-attach-item-pdf{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .note-embed-btn{background:var(--panel);border:1px solid var(--border);border-radius:8px;
+    padding:6px 12px;font-size:12px;font-weight:600;color:var(--text);cursor:pointer;}
   .note-embed-btn.danger{color:var(--red);border-color:rgba(255,77,79,.4);}
-  .note-embed.pdf-embed{display:inline-flex;align-items:center;gap:8px;}
-  .note-editable .note-pdf-link{display:inline-flex;align-items:center;gap:6px;background:var(--panel);
+  .note-pdf-link{display:inline-flex;align-items:center;gap:6px;background:var(--panel);
     border:1px solid var(--border);border-radius:10px;padding:8px 12px;color:var(--text);text-decoration:none;
-    font-size:14px;margin:4px 0;}
+    font-size:14px;}
 
   .note-attach-row{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
   .note-attach-btn{display:flex;align-items:center;gap:6px;background:var(--panel-2);border:1px solid var(--border);
@@ -521,7 +518,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 27.08.2026 21:45 (Robuste Foto/PDF-Blöcke, iOS-fest)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 27.08.2026 22:20 (Anhänge komplett getrennt vom Textfeld)</div>
   </div>
 
   <!-- HOME -->
@@ -553,7 +550,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 27.08.2026 21:45 (Robuste Foto/PDF-Blöcke, iOS-fest)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 27.08.2026 22:20 (Anhänge komplett getrennt vom Textfeld)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
@@ -1015,13 +1012,14 @@
       <span class="note-color-dot" style="background:#0a84ff;" onmousedown="event.preventDefault()" onclick="formatNote('foreColor','#0a84ff')"></span>
       <span class="note-color-dot" style="background:#ffb020;" onmousedown="event.preventDefault()" onclick="formatNote('foreColor','#ffb020')"></span>
     </div>
-    <div id="noteEditableField" class="note-editable" contenteditable="true" data-placeholder="Bemerkung (optional) – z. B. Auf lateinamerikanischem Spanisch sagt man ..." onclick="handleNoteFieldClick(event)"></div>
+    <div id="noteEditableField" class="note-editable" contenteditable="true" data-placeholder="Bemerkung (optional) – z. B. Auf lateinamerikanischem Spanisch sagt man ..."></div>
+    <div class="note-attachments" id="noteAttachmentsList"></div>
     <div class="note-attach-row">
-      <button type="button" class="note-attach-btn" onclick="saveNoteSelection(); document.getElementById('notePhotoInput').click()">
+      <button type="button" class="note-attach-btn" onclick="document.getElementById('notePhotoInput').click()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10.5" r="1.5"/><path d="M21 15l-5-5L5 19"/></svg>
         Foto
       </button>
-      <button type="button" class="note-attach-btn" onclick="saveNoteSelection(); document.getElementById('notePdfInput').click()">
+      <button type="button" class="note-attach-btn" onclick="document.getElementById('notePdfInput').click()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
         PDF
       </button>
@@ -1659,6 +1657,26 @@ function migrateCardNotes(){
       }
       delete c.noteSource;
       delete c.noteTarget;
+      if(!Array.isArray(c.attachments)) c.attachments = [];
+      // Frühere Version bettete Fotos/PDFs direkt in den Text ein (führte zu iOS-Problemen) –
+      // vorhandene Embeds herauslösen und in die getrennte Anhänge-Liste überführen.
+      if(c.note && c.note.indexOf('note-embed') !== -1){
+        try{
+          const tmp = document.createElement('div');
+          tmp.innerHTML = c.note;
+          tmp.querySelectorAll('.note-embed').forEach(embed=>{
+            const img = embed.querySelector('img');
+            const a = embed.querySelector('a');
+            if(img){
+              c.attachments.push({ id: uid(), type:'image', url: img.getAttribute('src'), width: 60 });
+            } else if(a){
+              c.attachments.push({ id: uid(), type:'pdf', url: a.getAttribute('href'), name: a.textContent.replace('📄','').trim() });
+            }
+            embed.remove();
+          });
+          c.note = tmp.innerHTML;
+        }catch(e){ console.error('Migration fehlgeschlagen für Karte', c.id, e); }
+      }
     });
   });
 }
@@ -2008,6 +2026,7 @@ function openSetDetail(id){
   document.getElementById('inputExampleSource').value = "";
   document.getElementById('inputExampleTarget').value = "";
   currentNote = '';
+  currentAttachments = [];
   updateNoteBadges();
   editingCardId = null;
   document.getElementById('addOrUpdateBtn').textContent = 'Wort hinzufügen';
@@ -2187,7 +2206,8 @@ function duplicateSet(){
     source: s.source,
     target: s.target,
     cards: s.cards.map(c => ({ id: uid(), source: c.source, target: c.target, difficulty: c.difficulty || 'neu',
-      exampleSource: c.exampleSource||'', exampleTarget: c.exampleTarget||'', note: c.note||'' }))
+      exampleSource: c.exampleSource||'', exampleTarget: c.exampleTarget||'', note: c.note||'',
+      attachments: (c.attachments||[]).map(a=>({...a})) }))
   };
   appData.learnSets.push(copy);
   persist();
@@ -2448,7 +2468,7 @@ function renderCardList(){
     const diffBadge = `<span class="diff-badge ${diff}" onclick="cycleDifficulty('${card.id}')">${diff}</span>`;
     const exSrc = card.exampleSource ? `<div class="w-example">${escapeHtml(card.exampleSource)}</div>` : '';
     const exTgt = card.exampleTarget ? `<div class="w-example">${escapeHtml(card.exampleTarget)}</div>` : '';
-    const hasNote = !isNoteEmpty(card.note);
+    const hasNote = hasNoteContent(card.note, card.attachments);
     const noteBadge = `<span class="note-badge ${hasNote?'has-note':''}" style="margin-left:0;" onclick="openCardNotesPopup('${card.id}')">i</span>`;
     return `<div class="card-list-item">
       <div class="words">
@@ -2485,9 +2505,12 @@ let noteEditorContext = { mode: 'form' };
 
 function isNoteEmpty(html){
   if(!html) return true;
-  if(/<img[\s>]|<a[\s>]/i.test(html)) return false;
   const stripped = html.replace(/<br\s*\/?>/gi,'').replace(/<[^>]+>/g,'').replace(/&nbsp;/g,'').trim();
   return stripped.length === 0;
+}
+
+function hasNoteContent(note, attachments){
+  return !isNoteEmpty(note) || (Array.isArray(attachments) && attachments.length > 0);
 }
 
 function stripNoteHtml(html){
@@ -2501,32 +2524,6 @@ function formatNote(cmd, value){
 }
 window.formatNote = formatNote;
 
-function handleNoteFieldClick(event){
-  const link = event.target.closest('a');
-  if(link && link.href){
-    event.preventDefault();
-    window.open(link.href, '_blank', 'noopener');
-    return;
-  }
-  // Links/Bilder sind jetzt als contenteditable="false"-Embeds eingebettet und haben
-  // eigene, immer sichtbare Buttons (Grösse/Löschen) – kein Klick-Handling hier mehr nötig.
-}
-window.handleNoteFieldClick = handleNoteFieldClick;
-
-function resizeEmbedImage(btn, percent){
-  const embed = btn.closest('.note-embed');
-  const img = embed && embed.querySelector('img');
-  if(img){ img.style.width = percent + '%'; img.style.height = 'auto'; img.style.maxWidth = '100%'; }
-}
-window.resizeEmbedImage = resizeEmbedImage;
-
-function deleteEmbed(btn){
-  const embed = btn.closest('.note-embed');
-  if(embed) embed.remove();
-}
-window.deleteEmbed = deleteEmbed;
-
-
 function toggleNoteFullscreen(){
   const box = document.getElementById('notePopupBox');
   const btn = document.getElementById('noteFullscreenBtn');
@@ -2537,34 +2534,43 @@ function toggleNoteFullscreen(){
 }
 window.toggleNoteFullscreen = toggleNoteFullscreen;
 
-/* ---- Foto/PDF-Anhänge in Bemerkungen ---- */
-let savedNoteRange = null;
+/* ---- Foto/PDF-Anhänge: völlig getrennt vom editierbaren Textfeld,
+   damit iOS Tipps auf Buttons nicht als Cursor-Platzierung fehlinterpretiert ---- */
+let workingAttachments = [];
 
-function saveNoteSelection(){
-  const field = document.getElementById('noteEditableField');
-  const sel = window.getSelection();
-  if(sel.rangeCount > 0){
-    const range = sel.getRangeAt(0);
-    if(field.contains(range.commonAncestorContainer)){
-      savedNoteRange = range.cloneRange();
-      return;
+function renderNoteAttachments(){
+  const container = document.getElementById('noteAttachmentsList');
+  container.innerHTML = workingAttachments.map(att=>{
+    if(att.type === 'image'){
+      return `<div class="note-attach-item">
+        <img src="${att.url}" style="width:${att.width||60}%;">
+        <div class="note-attach-item-controls">
+          <button type="button" class="note-embed-btn" onclick="setAttachmentWidth('${att.id}',30)">Klein</button>
+          <button type="button" class="note-embed-btn" onclick="setAttachmentWidth('${att.id}',60)">Mittel</button>
+          <button type="button" class="note-embed-btn" onclick="setAttachmentWidth('${att.id}',100)">Groß</button>
+          <button type="button" class="note-embed-btn danger" onclick="removeAttachment('${att.id}')">🗑 Löschen</button>
+        </div>
+      </div>`;
     }
-  }
-  const r = document.createRange();
-  r.selectNodeContents(field);
-  r.collapse(false);
-  savedNoteRange = r;
+    return `<div class="note-attach-item note-attach-item-pdf">
+      <a href="${att.url}" target="_blank" rel="noopener" class="note-pdf-link">📄 ${escapeHtml(att.name||'PDF-Dokument')}</a>
+      <button type="button" class="note-embed-btn danger" onclick="removeAttachment('${att.id}')">🗑</button>
+    </div>`;
+  }).join('');
 }
-window.saveNoteSelection = saveNoteSelection;
 
-function insertHtmlIntoNote(html){
-  const field = document.getElementById('noteEditableField');
-  field.focus();
-  const sel = window.getSelection();
-  sel.removeAllRanges();
-  if(savedNoteRange) sel.addRange(savedNoteRange);
-  document.execCommand('insertHTML', false, html);
+function setAttachmentWidth(id, percent){
+  const att = workingAttachments.find(a=>a.id===id);
+  if(att) att.width = percent;
+  renderNoteAttachments();
 }
+window.setAttachmentWidth = setAttachmentWidth;
+
+function removeAttachment(id){
+  workingAttachments = workingAttachments.filter(a=>a.id!==id);
+  renderNoteAttachments();
+}
+window.removeAttachment = removeAttachment;
 
 function compressImageFile(file, maxDim, quality){
   return new Promise((resolve, reject)=>{
@@ -2606,7 +2612,8 @@ async function handleNotePhotoSelect(event){
     const blob = await compressImageFile(file, 1600, 0.75);
     statusEl.textContent = 'Foto wird hochgeladen…';
     const url = await uploadNoteFile(blob, 'jpg');
-    insertHtmlIntoNote(`<span class="note-embed" contenteditable="false"><img src="${url}" alt="Foto"><span class="note-embed-controls"><button type="button" class="note-embed-btn" onclick="resizeEmbedImage(this,30)">Klein</button><button type="button" class="note-embed-btn" onclick="resizeEmbedImage(this,60)">Mittel</button><button type="button" class="note-embed-btn" onclick="resizeEmbedImage(this,100)">Groß</button><button type="button" class="note-embed-btn danger" onclick="deleteEmbed(this)">🗑 Löschen</button></span></span>`);
+    workingAttachments.push({ id: uid(), type:'image', url, width: 60 });
+    renderNoteAttachments();
     statusEl.textContent = '';
   }catch(e){
     console.error(e);
@@ -2625,8 +2632,8 @@ async function handleNotePdfSelect(event){
   statusEl.textContent = 'PDF wird hochgeladen…';
   try{
     const url = await uploadNoteFile(file, 'pdf');
-    const label = escapeHtml(file.name || 'PDF-Dokument');
-    insertHtmlIntoNote(`<span class="note-embed pdf-embed" contenteditable="false"><a href="${url}" target="_blank" rel="noopener" class="note-pdf-link">📄 ${label}</a><button type="button" class="note-embed-btn danger" onclick="deleteEmbed(this)">🗑</button></span>`);
+    workingAttachments.push({ id: uid(), type:'pdf', url, name: file.name || 'PDF-Dokument' });
+    renderNoteAttachments();
     statusEl.textContent = '';
   }catch(e){
     console.error(e);
@@ -2636,8 +2643,10 @@ async function handleNotePdfSelect(event){
 }
 window.handleNotePdfSelect = handleNotePdfSelect;
 
-function openNotePopupWithText(html){
+function openNotePopupWithText(html, attachments){
   document.getElementById('noteEditableField').innerHTML = html || '';
+  workingAttachments = (attachments || []).map(a=>({...a}));
+  renderNoteAttachments();
   document.getElementById('notePopup').classList.add('show');
 }
 
@@ -2650,21 +2659,23 @@ window.closeNotePopup = closeNotePopup;
 
 function saveNotePopup(){
   const html = document.getElementById('noteEditableField').innerHTML;
-  const empty = isNoteEmpty(html);
-  const finalHtml = empty ? '' : html;
+  const finalHtml = isNoteEmpty(html) ? '' : html;
+  const attachments = workingAttachments;
 
   if(noteEditorContext.mode === 'card'){
     const s = getSet(currentSetId);
     const card = s && s.cards.find(c=>c.id===noteEditorContext.cardId);
-    if(card){ card.note = finalHtml; persist(); renderCardList(); }
+    if(card){ card.note = finalHtml; card.attachments = attachments; persist(); renderCardList(); }
   } else if(noteEditorContext.mode === 'sessioncard'){
     const card = session.cards.find(c=>c.id===noteEditorContext.cardId);
-    if(card){ card.note = finalHtml; persist(); updateCardNoteBadgeDisplay(); }
+    if(card){ card.note = finalHtml; card.attachments = attachments; persist(); updateCardNoteBadgeDisplay(); }
   } else if(noteEditorContext.mode === 'session'){
     sessionNote = finalHtml;
+    sessionAttachments = attachments;
     updateSessionNoteBadge();
   } else {
     currentNote = finalHtml;
+    currentAttachments = attachments;
     updateNoteBadges();
   }
   closeNotePopup();
@@ -2672,14 +2683,16 @@ function saveNotePopup(){
 window.saveNotePopup = saveNotePopup;
 
 /* ---- Formular oben (neues/bearbeitetes Wort) ---- */
+let currentAttachments = [];
+
 function updateNoteBadges(){
   const badge = document.getElementById('noteBadgeTarget');
-  if(badge) badge.classList.toggle('has-note', !isNoteEmpty(currentNote));
+  if(badge) badge.classList.toggle('has-note', hasNoteContent(currentNote, currentAttachments));
 }
 
 function openFormNotesPopup(){
   noteEditorContext = { mode: 'form' };
-  openNotePopupWithText(currentNote);
+  openNotePopupWithText(currentNote, currentAttachments);
 }
 window.openFormNotesPopup = openFormNotesPopup;
 
@@ -2690,7 +2703,7 @@ function openCardNotesPopup(cardId){
   const card = s.cards.find(c=>c.id===cardId);
   if(!card) return;
   noteEditorContext = { mode: 'card', cardId };
-  openNotePopupWithText(card.note || '');
+  openNotePopupWithText(card.note || '', card.attachments || []);
 }
 window.openCardNotesPopup = openCardNotesPopup;
 
@@ -2705,6 +2718,7 @@ function editCard(cardId){
   document.getElementById('inputExampleSource').value = card.exampleSource || '';
   document.getElementById('inputExampleTarget').value = card.exampleTarget || '';
   currentNote = card.note || '';
+  currentAttachments = card.attachments || [];
   updateNoteBadges();
   document.getElementById('addOrUpdateBtn').textContent = 'Änderungen speichern';
   document.getElementById('cancelEditBtn').classList.remove('hidden');
@@ -2719,6 +2733,7 @@ function cancelEditCard(){
   document.getElementById('inputExampleSource').value = '';
   document.getElementById('inputExampleTarget').value = '';
   currentNote = '';
+  currentAttachments = [];
   updateNoteBadges();
   document.getElementById('addOrUpdateBtn').textContent = 'Wort hinzufügen';
   document.getElementById('cancelEditBtn').classList.add('hidden');
@@ -2738,17 +2753,18 @@ function addCard(){
     const card = s.cards.find(c=>c.id===editingCardId);
     if(card){
       card.source = src; card.target = tgt; card.exampleSource = exSrc; card.exampleTarget = exTgt;
-      card.note = currentNote;
+      card.note = currentNote; card.attachments = currentAttachments;
     }
     cancelEditCard();
   } else {
     s.cards.push({ id: uid(), source: src, target: tgt, difficulty: 'neu', exampleSource: exSrc, exampleTarget: exTgt,
-      note: currentNote });
+      note: currentNote, attachments: currentAttachments });
     document.getElementById('inputSource').value = "";
     document.getElementById('inputTarget').value = "";
     document.getElementById('inputExampleSource').value = "";
     document.getElementById('inputExampleTarget').value = "";
     currentNote = '';
+    currentAttachments = [];
     updateNoteBadges();
   }
   persist();
@@ -3403,14 +3419,14 @@ function updateCardNoteBadgeDisplay(){
   const badge = document.getElementById('cardNoteBadge');
   if(!badge) return;
   const card = session.cards[session.index];
-  badge.classList.toggle('has-note', !!(card && !isNoteEmpty(card.note)));
+  badge.classList.toggle('has-note', !!(card && hasNoteContent(card.note, card.attachments)));
 }
 
 function viewCurrentCardNote(){
   const card = session.cards[session.index];
   if(!card) return;
   noteEditorContext = { mode: 'sessioncard', cardId: card.id };
-  openNotePopupWithText(card.note || '');
+  openNotePopupWithText(card.note || '', card.attachments || []);
 }
 window.viewCurrentCardNote = viewCurrentCardNote;
 
@@ -3520,15 +3536,16 @@ function prevCard(){
 window.prevCard = prevCard;
 
 let sessionNote = '';
+let sessionAttachments = [];
 
 function updateSessionNoteBadge(){
   const badge = document.getElementById('sessionNoteBadge');
-  if(badge) badge.classList.toggle('has-note', !isNoteEmpty(sessionNote));
+  if(badge) badge.classList.toggle('has-note', hasNoteContent(sessionNote, sessionAttachments));
 }
 
 function openSessionNoteEditor(){
   noteEditorContext = { mode: 'session' };
-  openNotePopupWithText(sessionNote);
+  openNotePopupWithText(sessionNote, sessionAttachments);
 }
 window.openSessionNoteEditor = openSessionNoteEditor;
 
@@ -3545,6 +3562,7 @@ function openCardEditor(){
   document.getElementById('cardEditExampleSource').value = card.exampleSource || '';
   document.getElementById('cardEditExampleTarget').value = card.exampleTarget || '';
   sessionNote = card.note || '';
+  sessionAttachments = card.attachments || [];
   updateSessionNoteBadge();
   document.getElementById('cardEditOverlay').classList.add('show');
 }
@@ -3568,6 +3586,7 @@ function saveCardEditFromSession(){
   card.exampleSource = exSrc;
   card.exampleTarget = exTgt;
   card.note = sessionNote;
+  card.attachments = sessionAttachments;
   persist();
   closeCardEditor();
   renderSessionCard();
