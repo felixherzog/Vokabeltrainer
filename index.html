@@ -520,7 +520,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 27.08.2026 22:40 (Anhänge kompakt im Raster)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 28.08.2026 14:35 (Autogross00dfschreibung bei Wortfeldern aus)</div>
   </div>
 
   <!-- HOME -->
@@ -552,7 +552,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 27.08.2026 22:40 (Anhänge kompakt im Raster)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 28.08.2026 14:35 (Autogross00dfschreibung bei Wortfeldern aus)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
@@ -609,11 +609,11 @@
       <div class="word-inputs">
         <div class="col">
           <div class="tag"><span id="detailFlagSrc"></span> <span id="detailLangSrc"></span></div>
-          <input type="text" id="inputSource" placeholder="Wort eingeben">
+          <input type="text" id="inputSource" placeholder="Wort eingeben" autocapitalize="off">
         </div>
         <div class="col">
           <div class="tag"><span id="detailFlagTgt"></span> <span id="detailLangTgt"></span></div>
-          <input type="text" id="inputTarget" placeholder="Übersetzung">
+          <input type="text" id="inputTarget" placeholder="Übersetzung" autocapitalize="off">
         </div>
       </div>
       <div class="word-inputs">
@@ -1021,13 +1021,13 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10.5" r="1.5"/><path d="M21 15l-5-5L5 19"/></svg>
         Foto
       </button>
-      <button type="button" class="note-attach-btn" onclick="document.getElementById('notePdfInput').click()">
+      <button type="button" class="note-attach-btn" onclick="document.getElementById('noteDocInput').click()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
-        PDF
+        Dokument
       </button>
       <span class="note-attach-status" id="noteAttachStatus"></span>
       <input type="file" id="notePhotoInput" accept="image/*" class="hidden" onchange="handleNotePhotoSelect(event)">
-      <input type="file" id="notePdfInput" accept="application/pdf" class="hidden" onchange="handleNotePdfSelect(event)">
+      <input type="file" id="noteDocInput" accept=".pdf,.doc,.docx,.pages,.txt,.rtf,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="hidden" onchange="handleNoteDocSelect(event)">
     </div>
     <div class="overlay-actions-row" style="margin-top:14px;">
       <button onclick="closeNotePopup()">Abbrechen</button>
@@ -1115,11 +1115,11 @@
     <h3>Wort korrigieren</h3>
     <div class="col">
       <div class="tag"><span id="cardEditFlagSrc"></span> <span id="cardEditLangSrc"></span></div>
-      <input type="text" id="cardEditSource">
+      <input type="text" id="cardEditSource" autocapitalize="off">
     </div>
     <div class="col">
       <div class="tag"><span id="cardEditFlagTgt"></span> <span id="cardEditLangTgt"></span></div>
-      <input type="text" id="cardEditTarget">
+      <input type="text" id="cardEditTarget" autocapitalize="off">
     </div>
     <div class="col">
       <div class="tag">Beispielsatz (optional)</div>
@@ -2540,6 +2540,15 @@ window.toggleNoteFullscreen = toggleNoteFullscreen;
    damit iOS Tipps auf Buttons nicht als Cursor-Platzierung fehlinterpretiert ---- */
 let workingAttachments = [];
 
+function fileEmoji(name){
+  const ext = (name||'').split('.').pop().toLowerCase();
+  if(ext==='pdf') return '📄';
+  if(ext==='doc' || ext==='docx') return '📝';
+  if(ext==='pages') return '📃';
+  if(ext==='txt' || ext==='rtf') return '📃';
+  return '📎';
+}
+
 function renderNoteAttachments(){
   const container = document.getElementById('noteAttachmentsList');
   container.innerHTML = workingAttachments.map(att=>{
@@ -2552,7 +2561,7 @@ function renderNoteAttachments(){
       </div>`;
     }
     return `<div class="note-attach-item note-attach-item-pdf">
-      <a href="${att.url}" target="_blank" rel="noopener" class="note-pdf-link">📄 ${escapeHtml(att.name||'PDF-Dokument')}</a>
+      <a href="${att.url}" target="_blank" rel="noopener" class="note-pdf-link">${fileEmoji(att.name)} ${escapeHtml(att.name||'Dokument')}</a>
       <button type="button" class="note-embed-btn danger" onclick="removeAttachment('${att.id}')">🗑 Löschen</button>
     </div>`;
   }).join('');
@@ -2616,25 +2625,26 @@ async function handleNotePhotoSelect(event){
 }
 window.handleNotePhotoSelect = handleNotePhotoSelect;
 
-async function handleNotePdfSelect(event){
+async function handleNoteDocSelect(event){
   const file = event.target.files[0];
   event.target.value = '';
   if(!file) return;
-  if(!storageReady){ showToast('PDF-Upload nicht verfügbar (kein Netzwerk?)'); return; }
+  if(!storageReady){ showToast('Dokument-Upload nicht verfügbar (kein Netzwerk?)'); return; }
   const statusEl = document.getElementById('noteAttachStatus');
-  statusEl.textContent = 'PDF wird hochgeladen…';
+  statusEl.textContent = 'Dokument wird hochgeladen…';
   try{
-    const url = await uploadNoteFile(file, 'pdf');
-    workingAttachments.push({ id: uid(), type:'pdf', url, name: file.name || 'PDF-Dokument' });
+    const ext = (file.name.split('.').pop() || 'dat').toLowerCase();
+    const url = await uploadNoteFile(file, ext);
+    workingAttachments.push({ id: uid(), type:'doc', url, name: file.name || 'Dokument' });
     renderNoteAttachments();
     statusEl.textContent = '';
   }catch(e){
     console.error(e);
     statusEl.textContent = '';
-    showToast('PDF-Upload fehlgeschlagen');
+    showToast('Dokument-Upload fehlgeschlagen');
   }
 }
-window.handleNotePdfSelect = handleNotePdfSelect;
+window.handleNoteDocSelect = handleNoteDocSelect;
 
 function openNotePopupWithText(html, attachments){
   document.getElementById('noteEditableField').innerHTML = html || '';
