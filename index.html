@@ -529,7 +529,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 28.08.2026 22:30 (Ausführlich-Modus: Frage/Antwort-Lernsets)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 30.08.2026 11:35 (Ausführlich: keine Sprachauswahl mehr)</div>
   </div>
 
   <!-- HOME -->
@@ -561,7 +561,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 28.08.2026 22:30 (Ausführlich-Modus: Frage/Antwort-Lernsets)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 30.08.2026 11:35 (Ausführlich: keine Sprachauswahl mehr)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
@@ -598,13 +598,15 @@
       <div class="pill-row" id="newSetModePills" style="padding:0;"></div>
       <div class="hint-text" id="newSetModeHint" style="margin-top:8px;"></div>
     </div>
-    <div class="field">
-      <label>Ausgangssprache (Vorderseite)</label>
-      <div class="lang-grid" id="newSetSourceGrid"></div>
-    </div>
-    <div class="field">
-      <label>Zielsprache (Rückseite)</label>
-      <div class="lang-grid" id="newSetTargetGrid"></div>
+    <div id="newSetLangFields">
+      <div class="field">
+        <label>Ausgangssprache (Vorderseite)</label>
+        <div class="lang-grid" id="newSetSourceGrid"></div>
+      </div>
+      <div class="field">
+        <label>Zielsprache (Rückseite)</label>
+        <div class="lang-grid" id="newSetTargetGrid"></div>
+      </div>
     </div>
     <button class="btn-primary" onclick="createSet()">Lernset erstellen</button>
   </div>
@@ -1957,9 +1959,12 @@ function renderNewSetModePills(){
     <button class="pill ${newSetMode==='vokabeln'?'active':''}" onclick="selectNewSetMode('vokabeln')">Vokabeln</button>
     <button class="pill ${newSetMode==='ausfuehrlich'?'active':''}" onclick="selectNewSetMode('ausfuehrlich')">Ausführlich</button>
   `;
-  document.getElementById('newSetModeHint').textContent = newSetMode==='vokabeln'
-    ? 'Wort/Übersetzung, Beispielsätze, eine Bemerkung. Vier Lernmodi verfügbar.'
-    : 'Zusätzlich je eine ausführliche, formatierbare Bemerkung pro Kartenseite (mit Foto/Dokument). Nur Karteikarten-Lernmodus.';
+  const ausfuehrlich = newSetMode === 'ausfuehrlich';
+  document.getElementById('newSetModeHint').textContent = ausfuehrlich
+    ? 'Zusätzlich je eine ausführliche, formatierbare Bemerkung pro Kartenseite (mit Foto/Dokument). Nur Karteikarten-Lernmodus.'
+    : 'Wort/Übersetzung, Beispielsätze, eine Bemerkung. Vier Lernmodi verfügbar.';
+  document.getElementById('newSetLangFields').classList.toggle('hidden', ausfuehrlich);
+  if(ausfuehrlich){ newSetSource = 'DE'; newSetTarget = 'DE'; }
 }
 
 function selectNewSetMode(mode){
@@ -2028,10 +2033,7 @@ function saveSetLanguages(){
     s.target = editSetTargetLang;
     persist();
     closeSetLanguages();
-    document.getElementById('detailFlagSrc').textContent = LANGS[s.source].flag;
-    document.getElementById('detailLangSrc').textContent = LANGS[s.source].name;
-    document.getElementById('detailFlagTgt').textContent = LANGS[s.target].flag;
-    document.getElementById('detailLangTgt').textContent = LANGS[s.target].name;
+    updateDetailLangLabels(s);
     showToast("Sprachen aktualisiert");
   };
   if(editSetSourceLang === editSetTargetLang){
@@ -2046,7 +2048,7 @@ window.saveSetLanguages = saveSetLanguages;
 function createSet(){
   const name = document.getElementById('newSetName').value.trim();
   if(!name){ showToast("Bitte einen Namen eingeben"); return; }
-  if(newSetSource === newSetTarget){
+  if(newSetMode !== 'ausfuehrlich' && newSetSource === newSetTarget){
     showTwoChoice(`Ausgangs- und Zielsprache sind beide „${LANGS[newSetSource].name}". Trotzdem fortfahren?`,
       'Fortfahren', 'Abbrechen',
       ()=> createSetConfirmed(name)
@@ -2065,6 +2067,15 @@ function createSetConfirmed(name){
 }
 
 /* ============ SET DETAIL (edit words) ============ */
+function updateDetailLangLabels(s){
+  const ausfuehrlich = s.mode === 'ausfuehrlich';
+  document.getElementById('detailFlagSrc').textContent = ausfuehrlich ? '' : LANGS[s.source].flag;
+  document.getElementById('detailLangSrc').textContent = ausfuehrlich ? 'Frage' : LANGS[s.source].name;
+  document.getElementById('detailFlagTgt').textContent = ausfuehrlich ? '' : LANGS[s.target].flag;
+  document.getElementById('detailLangTgt').textContent = ausfuehrlich ? 'Antwort' : LANGS[s.target].name;
+  document.getElementById('translateBtn').classList.toggle('hidden', ausfuehrlich);
+}
+
 function openSetDetail(id){
   currentSetId = id;
   const s = getSet(id);
@@ -2076,10 +2087,7 @@ function openSetDetail(id){
   const searchClear = document.getElementById('cardSearchClear');
   if(searchClear) searchClear.classList.add('hidden');
   document.getElementById('setDetailTitle').textContent = s.name;
-  document.getElementById('detailFlagSrc').textContent = LANGS[s.source].flag;
-  document.getElementById('detailLangSrc').textContent = LANGS[s.source].name;
-  document.getElementById('detailFlagTgt').textContent = LANGS[s.target].flag;
-  document.getElementById('detailLangTgt').textContent = LANGS[s.target].name;
+  updateDetailLangLabels(s);
   document.getElementById('inputSource').value = "";
   document.getElementById('inputTarget').value = "";
   document.getElementById('inputExampleSource').value = "";
