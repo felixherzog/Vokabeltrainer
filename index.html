@@ -529,7 +529,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 30.08.2026 13:35 (Keine Flagge/Sprachausgabe bei Ausführlich)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 30.08.2026 21:05 (Frage/Antwort auch im Wort-korrigieren-Overlay)</div>
   </div>
 
   <!-- HOME -->
@@ -561,7 +561,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 30.08.2026 13:35 (Keine Flagge/Sprachausgabe bei Ausführlich)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 30.08.2026 21:05 (Frage/Antwort auch im Wort-korrigieren-Overlay)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
@@ -3849,10 +3849,11 @@ function openCardEditor(){
   const card = session.cards[session.index];
   const s = session.set;
   if(!card || !s) return;
-  document.getElementById('cardEditFlagSrc').textContent = LANGS[s.source].flag;
-  document.getElementById('cardEditLangSrc').textContent = LANGS[s.source].name;
-  document.getElementById('cardEditFlagTgt').textContent = LANGS[s.target].flag;
-  document.getElementById('cardEditLangTgt').textContent = LANGS[s.target].name;
+  const ausfuehrlich = s.mode === 'ausfuehrlich';
+  document.getElementById('cardEditFlagSrc').textContent = ausfuehrlich ? '' : LANGS[s.source].flag;
+  document.getElementById('cardEditLangSrc').textContent = ausfuehrlich ? 'Frage' : LANGS[s.source].name;
+  document.getElementById('cardEditFlagTgt').textContent = ausfuehrlich ? '' : LANGS[s.target].flag;
+  document.getElementById('cardEditLangTgt').textContent = ausfuehrlich ? 'Antwort' : LANGS[s.target].name;
   document.getElementById('cardEditSource').value = card.source;
   document.getElementById('cardEditTarget').value = card.target;
   document.getElementById('cardEditExampleSource').value = card.exampleSource || '';
