@@ -529,7 +529,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 30.08.2026 11:35 (Ausführlich: keine Sprachauswahl mehr)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 30.08.2026 12:30 (Saubere Anzeige auch bei Nutzung Spalte 4)</div>
   </div>
 
   <!-- HOME -->
@@ -561,7 +561,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 30.08.2026 11:35 (Ausführlich: keine Sprachauswahl mehr)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 30.08.2026 12:30 (Saubere Anzeige auch bei Nutzung Spalte 4)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
@@ -1050,6 +1050,17 @@
 
     <div id="noteBackSection" class="hidden">
       <div class="note-side-label">Rückseite</div>
+      <div class="note-toolbar">
+        <button type="button" onmousedown="event.preventDefault()" onclick="formatNote('bold')"><b>B</b></button>
+        <button type="button" onmousedown="event.preventDefault()" onclick="formatNote('italic')"><i>I</i></button>
+        <button type="button" onmousedown="event.preventDefault()" onclick="formatNote('insertUnorderedList')">•≡</button>
+        <span class="note-toolbar-sep"></span>
+        <span class="note-color-dot" style="background:#f2f2f4;" onmousedown="event.preventDefault()" onclick="formatNote('foreColor','#f2f2f4')"></span>
+        <span class="note-color-dot" style="background:#ff4d4f;" onmousedown="event.preventDefault()" onclick="formatNote('foreColor','#ff4d4f')"></span>
+        <span class="note-color-dot" style="background:#30d158;" onmousedown="event.preventDefault()" onclick="formatNote('foreColor','#30d158')"></span>
+        <span class="note-color-dot" style="background:#0a84ff;" onmousedown="event.preventDefault()" onclick="formatNote('foreColor','#0a84ff')"></span>
+        <span class="note-color-dot" style="background:#ffb020;" onmousedown="event.preventDefault()" onclick="formatNote('foreColor','#ffb020')"></span>
+      </div>
       <div id="noteEditableFieldBack" class="note-editable" contenteditable="true" data-placeholder="Bemerkung Rückseite (optional)" onfocus="activeNoteField='noteEditableFieldBack'"></div>
       <div class="note-attachments" id="noteAttachmentsListBack"></div>
       <div class="note-attach-row">
@@ -2199,31 +2210,36 @@ function detectDelimiter(line){
   return bestCount > 0 ? best : ',';
 }
 
-function parseCsvLine(line, delim){
-  const result = [];
-  let cur = '';
+/* Vollständiger CSV/TSV-Parser über den GESAMTEN Text (nicht zeilenweise!), damit
+   Felder in Anführungszeichen auch eingebettete Zeilenumbrüche enthalten dürfen. */
+function parseCsvFull(text, delim){
+  const rows = [];
+  let row = [];
+  let field = '';
   let inQuotes = false;
-  for(let i=0;i<line.length;i++){
-    const ch = line[i];
+  for(let i=0; i<text.length; i++){
+    const ch = text[i];
     if(inQuotes){
       if(ch === '"'){
-        if(line[i+1] === '"'){ cur += '"'; i++; }
+        if(text[i+1] === '"'){ field += '"'; i++; }
         else { inQuotes = false; }
       } else {
-        cur += ch;
+        field += ch;
       }
     } else {
       if(ch === '"'){ inQuotes = true; }
-      else if(ch === delim){ result.push(cur.trim()); cur = ''; }
-      else { cur += ch; }
+      else if(ch === delim){ row.push(field); field = ''; }
+      else if(ch === '\r'){ /* ignorieren, \n regelt Zeilenende */ }
+      else if(ch === '\n'){ row.push(field); rows.push(row); row = []; field = ''; }
+      else { field += ch; }
     }
   }
-  result.push(cur.trim());
-  return result;
+  if(field.length>0 || row.length>0){ row.push(field); rows.push(row); }
+  return rows;
 }
 
 function looksLikeHeader(row, s){
-  const headerWords = ['wort','übersetzung','translation','source','target','front','back','deutsch','spanisch','französisch','englisch','german','spanish','french','english'];
+  const headerWords = ['wort','übersetzung','translation','source','target','front','back','deutsch','spanisch','französisch','englisch','german','spanish','french','english','frage','antwort'];
   const a = (row[0]||'').trim().toLowerCase();
   const b = (row[1]||'').trim().toLowerCase();
   if(headerWords.includes(a) || headerWords.includes(b)) return true;
@@ -2235,17 +2251,28 @@ function looksLikeHeader(row, s){
   return false;
 }
 
+function flattenPlainField(text){
+  return (text||'').replace(/\s*\r?\n\s*/g, ' ').trim();
+}
+
+function noteFieldToHtml(text){
+  const t = (text||'').trim();
+  if(!t) return '';
+  return escapeHtml(t).replace(/\r?\n/g, '<br>');
+}
+
 function processCsvImport(){
   const raw = document.getElementById('csvImportText').value;
   if(!raw.trim()){ showToast("Bitte Text einfügen"); return; }
-  const lines = raw.split(/\r\n|\n|\r/).map(l=>l.trim()).filter(l=>l.length>0);
-  if(lines.length===0){ showToast("Keine Zeilen gefunden"); return; }
-  const delim = detectDelimiter(lines[0]);
+  const firstLine = raw.split(/\r\n|\n|\r/)[0] || '';
+  const delim = detectDelimiter(firstLine);
   const s = getSet(currentSetId);
   const ausfuehrlich = s && s.mode === 'ausfuehrlich';
-  const rows = lines.map(l=>{
-    const parts = parseCsvLine(l, delim);
-    return [parts[0]||'', parts[1]||'', parts[2]||'', parts[3]||'', parts[4]||'', parts[5]||''];
+
+  const parsedRows = parseCsvFull(raw, delim).filter(r => r.some(c => c.trim().length>0));
+  const rows = parsedRows.map(parts=>{
+    const clean = (v) => (v||'').trim();
+    return [clean(parts[0]), clean(parts[1]), clean(parts[2]), clean(parts[3]), clean(parts[4]), clean(parts[5])];
   }).filter(r => ausfuehrlich
     ? ((r[0]||r[2]||r[4]) && (r[1]||r[3]||r[5]))
     : (r[0] && r[1])
@@ -2271,9 +2298,14 @@ function finishCsvImport(skipFirst){
   if(skipFirst) rows = rows.slice(1);
   const ausfuehrlich = s.mode === 'ausfuehrlich';
   rows.forEach(r=>{
-    const card = { id: uid(), source: r[0], target: r[1], difficulty: 'neu', exampleSource: r[2]||'', exampleTarget: r[3]||'' };
-    if(ausfuehrlich){ card.noteFront = r[4]||''; card.noteBack = r[5]||''; card.attachmentsFront = []; card.attachmentsBack = []; }
-    else { card.note = r[4]||''; card.attachments = []; }
+    const card = { id: uid(), source: flattenPlainField(r[0]), target: flattenPlainField(r[1]), difficulty: 'neu',
+      exampleSource: flattenPlainField(r[2]), exampleTarget: flattenPlainField(r[3]) };
+    if(ausfuehrlich){
+      card.noteFront = noteFieldToHtml(r[4]); card.noteBack = noteFieldToHtml(r[5]);
+      card.attachmentsFront = []; card.attachmentsBack = [];
+    } else {
+      card.note = noteFieldToHtml(r[4]); card.attachments = [];
+    }
     s.cards.push(card);
   });
   pendingCsvRows = [];
@@ -3543,8 +3575,9 @@ function updateCardNoteDisplay(){
   const noteHtml = isBack ? (card.noteBack||'') : (card.noteFront||'');
   const atts = isBack ? (card.attachmentsBack||[]) : (card.attachmentsFront||[]);
   const wordText = isBack ? session._backWord : session._frontWord;
+  const exampleText = isBack ? session._backExample : session._frontExample;
 
-  wordEl.classList.toggle('word-plain', !wordText && hasNoteContent(noteHtml, atts));
+  wordEl.classList.toggle('word-plain', !wordText && (hasNoteContent(noteHtml, atts) || !!exampleText));
 
   if(hasNoteContent(noteHtml, atts)){
     noteEl.classList.remove('hidden');
