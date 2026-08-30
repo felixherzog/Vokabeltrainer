@@ -529,7 +529,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 30.08.2026 12:50 (Kein Lernmodus-Auswahl + ❓-Filter für Ausführlich)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 30.08.2026 13:35 (Keine Flagge/Sprachausgabe bei Ausführlich)</div>
   </div>
 
   <!-- HOME -->
@@ -561,7 +561,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 30.08.2026 12:50 (Kein Lernmodus-Auswahl + ❓-Filter für Ausführlich)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 30.08.2026 13:35 (Keine Flagge/Sprachausgabe bei Ausführlich)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
@@ -3641,7 +3641,10 @@ function renderSessionCard(){
 
   document.getElementById('sessCount').textContent = `${index+1} / ${cards.length}`;
   document.getElementById('progressFill').style.width = `${(index/cards.length)*100}%`;
+  const isAusfuehrlich = set.mode === 'ausfuehrlich';
+  document.getElementById('cardFlag').classList.toggle('hidden', isAusfuehrlich);
   document.getElementById('cardFlag').textContent = LANGS[frontLang].flag;
+  document.getElementById('speakBtn').classList.toggle('hidden', isAusfuehrlich);
   document.getElementById('cardWord').textContent = frontWord;
   updateCardDiffBadge();
   document.getElementById('cardSub').textContent = "";
@@ -3731,10 +3734,11 @@ function updateCardExampleDisplay(example){
   const box = document.getElementById('cardExample');
   const textEl = document.getElementById('cardExampleText');
   const speakBtn = document.getElementById('cardExampleSpeakBtn');
+  const isAusfuehrlich = session.set && session.set.mode === 'ausfuehrlich';
   if(example && example.trim()){
     box.classList.remove('hidden');
     textEl.textContent = example;
-    speakBtn.classList.remove('hidden');
+    speakBtn.classList.toggle('hidden', isAusfuehrlich);
   } else {
     box.classList.add('hidden');
     textEl.textContent = '';
