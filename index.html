@@ -529,7 +529,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 30.08.2026 12:30 (Saubere Anzeige auch bei Nutzung Spalte 4)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 30.08.2026 12:50 (Kein Lernmodus-Auswahl + ❓-Filter für Ausführlich)</div>
   </div>
 
   <!-- HOME -->
@@ -561,7 +561,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 30.08.2026 12:30 (Saubere Anzeige auch bei Nutzung Spalte 4)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 30.08.2026 12:50 (Kein Lernmodus-Auswahl + ❓-Filter für Ausführlich)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
@@ -794,8 +794,10 @@
       </div>
     </div>
 
-    <div class="section-label">Lernmodus</div>
-    <div class="card-box" id="modeListBox"></div>
+    <div id="learnModeSection">
+      <div class="section-label">Lernmodus</div>
+      <div class="card-box" id="modeListBox"></div>
+    </div>
 
     <button class="btn-primary" id="startBtn" onclick="startSession()">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
@@ -1903,8 +1905,10 @@ window.openEdit = openEdit;
 
 function renderEditLangFilter(){
   const container = document.getElementById('editLangFilterContainer');
-  const targets = [...new Set(appData.learnSets.map(s=>s.target))];
-  if(targets.length <= 1){
+  const vokabelnSets = appData.learnSets.filter(s => s.mode !== 'ausfuehrlich');
+  const ausfuehrlichCount = appData.learnSets.length - vokabelnSets.length;
+  const targets = [...new Set(vokabelnSets.map(s=>s.target))];
+  if(targets.length <= 1 && ausfuehrlichCount === 0){
     container.innerHTML = '';
     if(editLangFilter !== 'alle') editLangFilter = 'alle';
     return;
@@ -1912,10 +1916,14 @@ function renderEditLangFilter(){
   const allCount = appData.learnSets.length;
   const badges = [`<span class="filter-badge ${editLangFilter==='alle'?'on-alle':''}" onclick="selectEditLangFilter('alle')" style="font-size:13px;">🌐 ${allCount}</span>`];
   targets.forEach(t=>{
-    const count = appData.learnSets.filter(s=>s.target===t).length;
+    const count = vokabelnSets.filter(s=>s.target===t).length;
     const active = editLangFilter===t ? 'on-alle' : '';
     badges.push(`<span class="filter-badge ${active}" onclick="selectEditLangFilter('${t}')" style="font-size:13px;">${LANGS[t].flag} ${count}</span>`);
   });
+  if(ausfuehrlichCount > 0){
+    const active = editLangFilter==='ausfuehrlich' ? 'on-alle' : '';
+    badges.push(`<span class="filter-badge ${active}" onclick="selectEditLangFilter('ausfuehrlich')" style="font-size:13px;">❓ ${ausfuehrlichCount}</span>`);
+  }
   container.innerHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">${badges.join('')}</div>`;
 }
 
@@ -1928,7 +1936,9 @@ window.selectEditLangFilter = selectEditLangFilter;
 function renderSetList(){
   renderEditLangFilter();
   const c = document.getElementById('setListContainer');
-  const visible = editLangFilter==='alle' ? appData.learnSets : appData.learnSets.filter(s=>s.target===editLangFilter);
+  const visible = editLangFilter==='alle' ? appData.learnSets
+    : editLangFilter==='ausfuehrlich' ? appData.learnSets.filter(s=>s.mode==='ausfuehrlich')
+    : appData.learnSets.filter(s=>s.mode!=='ausfuehrlich' && s.target===editLangFilter);
   if(appData.learnSets.length===0){
     c.innerHTML = `<div class="empty"><div class="ic">📭</div><p>Noch keine Lernsets</p><p>Erstelle dein erstes Lernset, um Wörter zu sammeln.</p></div>`;
     return;
@@ -1938,9 +1948,9 @@ function renderSetList(){
     return;
   }
   c.innerHTML = visible.slice().sort((a,b)=> a.name.localeCompare(b.name, 'de')).map(s=>{
-    const src = LANGS[s.source], tgt = LANGS[s.target];
+    const flagsHtml = s.mode === 'ausfuehrlich' ? '❓' : `${LANGS[s.source].flag}<span class="arrow">→</span>${LANGS[s.target].flag}`;
     return `<div class="set-card" onclick="openSetDetail('${s.id}')">
-      <div class="set-flags">${src.flag}<span class="arrow">→</span>${tgt.flag}</div>
+      <div class="set-flags">${flagsHtml}</div>
       <div class="set-info"><div class="name">${escapeHtml(s.name)}</div><div class="count">${s.cards.length} Wörter</div></div>
       <div class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></div>
     </div>`;
@@ -3178,23 +3188,30 @@ window.selectSet = selectSet;
 
 function getVisibleLearnSets(){
   if(setLangFilter === 'alle') return appData.learnSets;
-  return appData.learnSets.filter(s => s.target === setLangFilter);
+  if(setLangFilter === 'ausfuehrlich') return appData.learnSets.filter(s => s.mode === 'ausfuehrlich');
+  return appData.learnSets.filter(s => s.mode !== 'ausfuehrlich' && s.target === setLangFilter);
 }
 
 function renderSetLangFilter(){
-  const targets = [...new Set(appData.learnSets.map(s=>s.target))];
-  if(targets.length <= 1 && setLangFilter !== 'alle') setLangFilter = 'alle';
+  const vokabelnSets = appData.learnSets.filter(s => s.mode !== 'ausfuehrlich');
+  const ausfuehrlichCount = appData.learnSets.length - vokabelnSets.length;
+  const targets = [...new Set(vokabelnSets.map(s=>s.target))];
+  if(targets.length <= 1 && ausfuehrlichCount === 0 && setLangFilter !== 'alle') setLangFilter = 'alle';
   ['setLangFilterContainer','fcSetLangFilterContainer'].forEach(id=>{
     const container = document.getElementById(id);
     if(!container) return;
-    if(targets.length <= 1){ container.innerHTML = ''; return; }
+    if(targets.length <= 1 && ausfuehrlichCount === 0){ container.innerHTML = ''; return; }
     const allCount = appData.learnSets.length;
     const badges = [`<span class="filter-badge ${setLangFilter==='alle'?'on-alle':''}" onclick="selectLangFilter('alle')" style="font-size:13px;">🌐 ${allCount}</span>`];
     targets.forEach(t=>{
-      const count = appData.learnSets.filter(s=>s.target===t).length;
+      const count = vokabelnSets.filter(s=>s.target===t).length;
       const active = setLangFilter===t ? 'on-alle' : '';
       badges.push(`<span class="filter-badge ${active}" onclick="selectLangFilter('${t}')" style="font-size:13px;">${LANGS[t].flag} ${count}</span>`);
     });
+    if(ausfuehrlichCount > 0){
+      const active = setLangFilter==='ausfuehrlich' ? 'on-alle' : '';
+      badges.push(`<span class="filter-badge ${active}" onclick="selectLangFilter('ausfuehrlich')" style="font-size:13px;">❓ ${ausfuehrlichCount}</span>`);
+    }
     container.innerHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">${badges.join('')}</div>`;
   });
 }
@@ -3312,23 +3329,26 @@ function renderLearnSetup(){
 
   const src = s ? LANGS[s.source] : null, tgt = s ? LANGS[s.target] : null;
   const ausfuehrlich = s && s.mode === 'ausfuehrlich';
-  const modes = ausfuehrlich ? [
-    { key:'fwd', label:'Karteikarten', flags: s? `${src.flag} → ${tgt.flag}` : '', disabled: n===0 },
-  ] : [
-    { key:'fwd', label:'Karteikarten', flags: s? `${src.flag} → ${tgt.flag}` : '', disabled: n===0 },
-    { key:'bwd', label:'Karteikarten', flags: s? `${tgt.flag} → ${src.flag}` : '', disabled: n===0 },
-    { key:'rf', label:'Richtig/Falsch', flags: s? `${src.flag} → ${tgt.flag}` : '', disabled: n===0 },
-    { key:'list', label:'Liste', flags:'', disabled: n===0 },
-    { key:'mc', label:'Multiple Choice', flags:'', disabled: mcDisabled, hint: mcDisabled ? 'Mind. 4 Karten' : '' },
-  ];
-  document.getElementById('modeListBox').innerHTML = modes.map(m=>{
-    const checked = currentMode===m.key;
-    return `<div class="mode-item ${m.disabled?'disabled':''}" onclick="${m.disabled?'':`selectMode('${m.key}')`}">
-      <div class="lbl">${m.label}${m.flags?`<span class="flags">${m.flags}</span>`:''}</div>
-      ${m.hint?`<div class="hint">${m.hint}</div>`:''}
-      <div class="radio ${checked?'checked':''}">${checked?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>':''}</div>
-    </div>`;
-  }).join('');
+  document.getElementById('learnModeSection').classList.toggle('hidden', ausfuehrlich);
+  if(ausfuehrlich){
+    currentMode = 'fwd';
+  } else {
+    const modes = [
+      { key:'fwd', label:'Karteikarten', flags: s? `${src.flag} → ${tgt.flag}` : '', disabled: n===0 },
+      { key:'bwd', label:'Karteikarten', flags: s? `${tgt.flag} → ${src.flag}` : '', disabled: n===0 },
+      { key:'rf', label:'Richtig/Falsch', flags: s? `${src.flag} → ${tgt.flag}` : '', disabled: n===0 },
+      { key:'list', label:'Liste', flags:'', disabled: n===0 },
+      { key:'mc', label:'Multiple Choice', flags:'', disabled: mcDisabled, hint: mcDisabled ? 'Mind. 4 Karten' : '' },
+    ];
+    document.getElementById('modeListBox').innerHTML = modes.map(m=>{
+      const checked = currentMode===m.key;
+      return `<div class="mode-item ${m.disabled?'disabled':''}" onclick="${m.disabled?'':`selectMode('${m.key}')`}">
+        <div class="lbl">${m.label}${m.flags?`<span class="flags">${m.flags}</span>`:''}</div>
+        ${m.hint?`<div class="hint">${m.hint}</div>`:''}
+        <div class="radio ${checked?'checked':''}">${checked?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>':''}</div>
+      </div>`;
+    }).join('');
+  }
 
   document.getElementById('startBtn').disabled = !s || n===0;
   switchScreen('view-learn-setup');
