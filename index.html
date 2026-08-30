@@ -262,7 +262,7 @@
   .session-count{font-size:13px;color:var(--text-dim);font-weight:600;white-space:nowrap;}
 
   .flashcard-wrap{perspective:1400px;margin:20px 0 26px;}
-  .flashcard{position:relative;min-height:280px;border-radius:26px;background:linear-gradient(160deg,#1a1a1d,#0f0f11);
+  .flashcard{position:relative;min-height:280px;max-height:60vh;overflow-y:auto;border-radius:26px;background:linear-gradient(160deg,#1a1a1d,#0f0f11);
     border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;
     padding:36px 24px;text-align:center;cursor:pointer;}
   .flashcard .flagtag{position:absolute;top:16px;left:18px;font-size:20px;opacity:.85;}
@@ -271,6 +271,12 @@
     justify-content:center;cursor:pointer;}
   .flashcard .card-edit-btn svg{width:14px;height:14px;}
   .flashcard .word{font-size:30px;font-weight:800;line-height:1.25;word-break:break-word;}
+  .flashcard .word.word-plain{font-size:16px;font-weight:400;line-height:1.5;}
+  .card-note-display{width:100%;text-align:left;font-size:15px;line-height:1.5;margin-top:16px;
+    padding-top:14px;border-top:1px solid var(--border);}
+  .card-note-display img{max-width:100%;border-radius:8px;display:block;margin:8px 0;}
+  .card-note-display ul{padding-left:20px;margin:6px 0;}
+  .card-note-display .note-attachments{margin-top:10px;}
   .flashcard .sub{font-size:13px;color:var(--text-dim);margin-top:10px;letter-spacing:.3px;}
   .flashcard .card-example{display:flex;align-items:center;gap:8px;margin-top:16px;padding:10px 14px;
     background:rgba(255,255,255,.04);border-radius:12px;max-width:100%;}
@@ -442,6 +448,9 @@
     color:var(--text);font-size:14px;cursor:pointer;}
   .note-toolbar button:active{background:var(--panel);}
   .note-toolbar-sep{width:1px;height:20px;background:var(--border);margin:0 2px;}
+  .note-side-label{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;
+    color:var(--text-dim);margin:14px 0 6px 2px;}
+  #noteBackSection{border-top:1px solid var(--border);margin-top:16px;padding-top:2px;}
   .note-color-dot{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid var(--border);flex-shrink:0;}
   .note-editable{width:100%;min-height:280px;max-height:50vh;overflow-y:auto;background:var(--panel-2);
     border:1px solid var(--border);border-top:none;border-radius:0 0 12px 12px;padding:14px;color:var(--text);
@@ -520,7 +529,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 28.08.2026 14:35 (Autogross00dfschreibung bei Wortfeldern aus)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 28.08.2026 22:30 (Ausführlich-Modus: Frage/Antwort-Lernsets)</div>
   </div>
 
   <!-- HOME -->
@@ -552,7 +561,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 28.08.2026 14:35 (Autogross00dfschreibung bei Wortfeldern aus)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 28.08.2026 22:30 (Ausführlich-Modus: Frage/Antwort-Lernsets)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
@@ -583,6 +592,11 @@
     <div class="field">
       <label>Name des Lernsets</label>
       <input type="text" id="newSetName" placeholder="z. B. Reisen &amp; Alltag">
+    </div>
+    <div class="field">
+      <label>Modus</label>
+      <div class="pill-row" id="newSetModePills" style="padding:0;"></div>
+      <div class="hint-text" id="newSetModeHint" style="margin-top:8px;"></div>
     </div>
     <div class="field">
       <label>Ausgangssprache (Vorderseite)</label>
@@ -875,6 +889,7 @@
           <span id="cardExampleText"></span>
           <span class="example-speak-btn hidden" id="cardExampleSpeakBtn" onclick="speakExample()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg></span>
         </div>
+        <div class="card-note-display hidden" id="cardNoteDisplay"></div>
         <span class="tapinfo" id="tapInfo">Tippen, um Lösung zu zeigen</span>
       </div>
     </div>
@@ -1014,7 +1029,8 @@
       <span class="note-color-dot" style="background:#0a84ff;" onmousedown="event.preventDefault()" onclick="formatNote('foreColor','#0a84ff')"></span>
       <span class="note-color-dot" style="background:#ffb020;" onmousedown="event.preventDefault()" onclick="formatNote('foreColor','#ffb020')"></span>
     </div>
-    <div id="noteEditableField" class="note-editable" contenteditable="true" data-placeholder="Bemerkung (optional) – z. B. Auf lateinamerikanischem Spanisch sagt man ..."></div>
+    <div class="note-side-label hidden" id="noteFrontLabel">Vorderseite</div>
+    <div id="noteEditableField" class="note-editable" contenteditable="true" data-placeholder="Bemerkung (optional) – z. B. Auf lateinamerikanischem Spanisch sagt man ..." onfocus="activeNoteField='noteEditableField'"></div>
     <div class="note-attachments" id="noteAttachmentsList"></div>
     <div class="note-attach-row">
       <button type="button" class="note-attach-btn" onclick="document.getElementById('notePhotoInput').click()">
@@ -1029,6 +1045,26 @@
       <input type="file" id="notePhotoInput" accept="image/*" class="hidden" onchange="handleNotePhotoSelect(event)">
       <input type="file" id="noteDocInput" accept=".pdf,.doc,.docx,.pages,.txt,.rtf,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="hidden" onchange="handleNoteDocSelect(event)">
     </div>
+
+    <div id="noteBackSection" class="hidden">
+      <div class="note-side-label">Rückseite</div>
+      <div id="noteEditableFieldBack" class="note-editable" contenteditable="true" data-placeholder="Bemerkung Rückseite (optional)" onfocus="activeNoteField='noteEditableFieldBack'"></div>
+      <div class="note-attachments" id="noteAttachmentsListBack"></div>
+      <div class="note-attach-row">
+        <button type="button" class="note-attach-btn" onclick="document.getElementById('notePhotoInputBack').click()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10.5" r="1.5"/><path d="M21 15l-5-5L5 19"/></svg>
+          Foto
+        </button>
+        <button type="button" class="note-attach-btn" onclick="document.getElementById('noteDocInputBack').click()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+          Dokument
+        </button>
+        <span class="note-attach-status" id="noteAttachStatusBack"></span>
+        <input type="file" id="notePhotoInputBack" accept="image/*" class="hidden" onchange="handleNotePhotoSelect(event,true)">
+        <input type="file" id="noteDocInputBack" accept=".pdf,.doc,.docx,.pages,.txt,.rtf,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="hidden" onchange="handleNoteDocSelect(event,true)">
+      </div>
+    </div>
+
     <div class="overlay-actions-row" style="margin-top:14px;">
       <button onclick="closeNotePopup()">Abbrechen</button>
       <button class="primary" onclick="saveNotePopup()">Speichern</button>
@@ -1039,7 +1075,7 @@
 <div class="modal-overlay" id="csvImportOverlay">
   <div class="csv-overlay-box">
     <h3>CSV aus Text einfügen</h3>
-    <div class="hint-text">Eine Zeile pro Wort: Ausgangssprache, Zielsprache, optional Beispielsatz Ausgangssprache, optional Beispielsatz Zielsprache, optional Bemerkung – getrennt durch Komma, Semikolon oder Tab (z. B. aus Excel kopiert). Nicht benötigte Spalten am Ende können weggelassen werden. Hinweis: Die Bemerkung wird beim CSV-Import als reiner Text ohne Formatierung übernommen.</div>
+    <div class="hint-text" id="csvImportHint">Eine Zeile pro Wort: Ausgangssprache, Zielsprache, optional Beispielsatz Ausgangssprache, optional Beispielsatz Zielsprache, optional Bemerkung – getrennt durch Komma, Semikolon oder Tab (z. B. aus Excel kopiert). Nicht benötigte Spalten am Ende können weggelassen werden. Hinweis: Die Bemerkung wird beim CSV-Import als reiner Text ohne Formatierung übernommen.</div>
     <textarea id="csvImportText" placeholder="Hund, el perro&#10;Katze, el gato, Die Katze schläft., El gato duerme."></textarea>
     <div class="overlay-actions-row">
       <button onclick="closeCsvImport()">Abbrechen</button>
@@ -1529,6 +1565,7 @@ let manualMode = false;
 let manualFilterCategory = 'alle';
 let newSetSource = "DE";
 let newSetTarget = "ES";
+let newSetMode = "vokabeln";
 
 let session = { cards: [], index: 0, flipped: false, mode: null };
 let mcState = { pool: [], index: 0, correct: 0, wrong: 0, locked:false };
@@ -1653,6 +1690,7 @@ function getSpeechLsKey(){ return `vokabeltrainer_speech_settings_v2_${currentPr
 
 function migrateCardNotes(){
   (appData.learnSets||[]).forEach(s=>{
+    if(!s.mode) s.mode = 'vokabeln';
     (s.cards||[]).forEach(c=>{
       if(c.note === undefined && (c.noteSource || c.noteTarget)){
         c.note = [c.noteSource, c.noteTarget].filter(Boolean).join('<br><br>');
@@ -1905,11 +1943,30 @@ function escapeHtml(str){
 function openNewSet(){
   document.getElementById('newSetName').value = "";
   newSetSource = "DE"; newSetTarget = "ES";
+  newSetMode = "vokabeln";
+  renderNewSetModePills();
   renderLangGrid('newSetSourceGrid', 'source');
   renderLangGrid('newSetTargetGrid', 'target');
   switchScreen('view-new-set');
 }
 window.openNewSet = openNewSet;
+
+function renderNewSetModePills(){
+  const box = document.getElementById('newSetModePills');
+  box.innerHTML = `
+    <button class="pill ${newSetMode==='vokabeln'?'active':''}" onclick="selectNewSetMode('vokabeln')">Vokabeln</button>
+    <button class="pill ${newSetMode==='ausfuehrlich'?'active':''}" onclick="selectNewSetMode('ausfuehrlich')">Ausführlich</button>
+  `;
+  document.getElementById('newSetModeHint').textContent = newSetMode==='vokabeln'
+    ? 'Wort/Übersetzung, Beispielsätze, eine Bemerkung. Vier Lernmodi verfügbar.'
+    : 'Zusätzlich je eine ausführliche, formatierbare Bemerkung pro Kartenseite (mit Foto/Dokument). Nur Karteikarten-Lernmodus.';
+}
+
+function selectNewSetMode(mode){
+  newSetMode = mode;
+  renderNewSetModePills();
+}
+window.selectNewSetMode = selectNewSetMode;
 
 function renderLangGrid(containerId, kind){
   const c = document.getElementById(containerId);
@@ -2001,7 +2058,7 @@ function createSet(){
 window.createSet = createSet;
 
 function createSetConfirmed(name){
-  const set = { id: uid(), name, source: newSetSource, target: newSetTarget, cards: [] };
+  const set = { id: uid(), name, source: newSetSource, target: newSetTarget, mode: newSetMode, cards: [] };
   appData.learnSets.push(set);
   persist();
   openSetDetail(set.id);
@@ -2029,6 +2086,10 @@ function openSetDetail(id){
   document.getElementById('inputExampleTarget').value = "";
   currentNote = '';
   currentAttachments = [];
+  currentNoteFront = '';
+  currentNoteBack = '';
+  currentAttachmentsFront = [];
+  currentAttachmentsBack = [];
   updateNoteBadges();
   editingCardId = null;
   document.getElementById('addOrUpdateBtn').textContent = 'Wort hinzufügen';
@@ -2078,7 +2139,9 @@ function exportSetCsv(){
   const s = getSet(currentSetId);
   if(!s) return;
   if(s.cards.length===0){ showToast("Keine Wörter zum Exportieren"); return; }
-  const lines = s.cards.map(c => `${csvEscape(c.source)},${csvEscape(c.target)},${csvEscape(c.exampleSource||'')},${csvEscape(c.exampleTarget||'')},${csvEscape(stripNoteHtml(c.note||''))}`);
+  const lines = s.mode === 'ausfuehrlich'
+    ? s.cards.map(c => `${csvEscape(c.source)},${csvEscape(c.target)},${csvEscape(c.exampleSource||'')},${csvEscape(c.exampleTarget||'')},${csvEscape(stripNoteHtml(c.noteFront||''))},${csvEscape(stripNoteHtml(c.noteBack||''))}`)
+    : s.cards.map(c => `${csvEscape(c.source)},${csvEscape(c.target)},${csvEscape(c.exampleSource||'')},${csvEscape(c.exampleTarget||'')},${csvEscape(stripNoteHtml(c.note||''))}`);
   const csv = lines.join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
@@ -2103,6 +2166,13 @@ function csvEscape(str){
 let pendingCsvRows = [];
 function openCsvImport(){
   document.getElementById('csvImportText').value = '';
+  const s = getSet(currentSetId);
+  const hintEl = document.getElementById('csvImportHint');
+  if(hintEl){
+    hintEl.textContent = (s && s.mode === 'ausfuehrlich')
+      ? 'Eine Zeile pro Karte: Wort, Übersetzung, Beispiel Vorderseite, Beispiel Rückseite, Bemerkung Vorderseite, Bemerkung Rückseite – getrennt durch Komma, Semikolon oder Tab. Pro Seite muss mindestens ein Feld gefüllt sein; nicht benötigte Spalten dürfen leer bleiben (z. B. nur Spalte 5+6 ausfüllen). Bemerkungen werden als reiner Text ohne Formatierung übernommen.'
+      : 'Eine Zeile pro Wort: Ausgangssprache, Zielsprache, optional Beispielsatz Ausgangssprache, optional Beispielsatz Zielsprache, optional Bemerkung – getrennt durch Komma, Semikolon oder Tab (z. B. aus Excel kopiert). Nicht benötigte Spalten am Ende können weggelassen werden. Hinweis: Die Bemerkung wird beim CSV-Import als reiner Text ohne Formatierung übernommen.';
+  }
   document.getElementById('csvImportOverlay').classList.add('show');
 }
 window.openCsvImport = openCsvImport;
@@ -2163,15 +2233,19 @@ function processCsvImport(){
   const lines = raw.split(/\r\n|\n|\r/).map(l=>l.trim()).filter(l=>l.length>0);
   if(lines.length===0){ showToast("Keine Zeilen gefunden"); return; }
   const delim = detectDelimiter(lines[0]);
+  const s = getSet(currentSetId);
+  const ausfuehrlich = s && s.mode === 'ausfuehrlich';
   const rows = lines.map(l=>{
     const parts = parseCsvLine(l, delim);
-    return [parts[0]||'', parts[1]||'', parts[2]||'', parts[3]||'', parts[4]||''];
-  }).filter(r => r[0] && r[1]);
+    return [parts[0]||'', parts[1]||'', parts[2]||'', parts[3]||'', parts[4]||'', parts[5]||''];
+  }).filter(r => ausfuehrlich
+    ? ((r[0]||r[2]||r[4]) && (r[1]||r[3]||r[5]))
+    : (r[0] && r[1])
+  );
 
-  if(rows.length===0){ showToast("Konnte keine Wortpaare erkennen"); return; }
+  if(rows.length===0){ showToast(ausfuehrlich ? "Pro Zeile muss je Seite mindestens ein Feld gefüllt sein" : "Konnte keine Wortpaare erkennen"); return; }
 
   pendingCsvRows = rows;
-  const s = getSet(currentSetId);
   if(looksLikeHeader(rows[0], s)){
     document.getElementById('headerCheckMessage').textContent = `Die erste Zeile "${rows[0][0]}, ${rows[0][1]}" sieht wie eine Kopfzeile aus. Überspringen?`;
     document.getElementById('headerCheckOverlay').classList.add('show');
@@ -2187,8 +2261,12 @@ function finishCsvImport(skipFirst){
   if(!s) { pendingCsvRows = []; return; }
   let rows = pendingCsvRows;
   if(skipFirst) rows = rows.slice(1);
+  const ausfuehrlich = s.mode === 'ausfuehrlich';
   rows.forEach(r=>{
-    s.cards.push({ id: uid(), source: r[0], target: r[1], difficulty: 'neu', exampleSource: r[2]||'', exampleTarget: r[3]||'', note: r[4]||'' });
+    const card = { id: uid(), source: r[0], target: r[1], difficulty: 'neu', exampleSource: r[2]||'', exampleTarget: r[3]||'' };
+    if(ausfuehrlich){ card.noteFront = r[4]||''; card.noteBack = r[5]||''; card.attachmentsFront = []; card.attachmentsBack = []; }
+    else { card.note = r[4]||''; card.attachments = []; }
+    s.cards.push(card);
   });
   pendingCsvRows = [];
   persist();
@@ -2207,9 +2285,13 @@ function duplicateSet(){
     name: s.name + ' (Kopie)',
     source: s.source,
     target: s.target,
+    mode: s.mode || 'vokabeln',
     cards: s.cards.map(c => ({ id: uid(), source: c.source, target: c.target, difficulty: c.difficulty || 'neu',
       exampleSource: c.exampleSource||'', exampleTarget: c.exampleTarget||'', note: c.note||'',
-      attachments: (c.attachments||[]).map(a=>({...a})) }))
+      attachments: (c.attachments||[]).map(a=>({...a})),
+      noteFront: c.noteFront||'', noteBack: c.noteBack||'',
+      attachmentsFront: (c.attachmentsFront||[]).map(a=>({...a})),
+      attachmentsBack: (c.attachmentsBack||[]).map(a=>({...a})) }))
   };
   appData.learnSets.push(copy);
   persist();
@@ -2470,7 +2552,9 @@ function renderCardList(){
     const diffBadge = `<span class="diff-badge ${diff}" onclick="cycleDifficulty('${card.id}')">${diff}</span>`;
     const exSrc = card.exampleSource ? `<div class="w-example">${escapeHtml(card.exampleSource)}</div>` : '';
     const exTgt = card.exampleTarget ? `<div class="w-example">${escapeHtml(card.exampleTarget)}</div>` : '';
-    const hasNote = hasNoteContent(card.note, card.attachments);
+    const hasNote = s.mode === 'ausfuehrlich'
+      ? (hasNoteContent(card.noteFront, card.attachmentsFront) || hasNoteContent(card.noteBack, card.attachmentsBack))
+      : hasNoteContent(card.note, card.attachments);
     const noteBadge = `<span class="note-badge ${hasNote?'has-note':''}" style="margin-left:0;" onclick="openCardNotesPopup('${card.id}')">i</span>`;
     return `<div class="card-list-item">
       <div class="words">
@@ -2520,8 +2604,11 @@ function stripNoteHtml(html){
   return html.replace(/<\/(div|p|li)>/gi, '\n').replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g,' ').trim();
 }
 
+let activeNoteField = 'noteEditableField';
+
 function formatNote(cmd, value){
-  document.getElementById('noteEditableField').focus();
+  const field = document.getElementById(activeNoteField);
+  field.focus();
   document.execCommand(cmd, false, value || null);
 }
 window.formatNote = formatNote;
@@ -2536,9 +2623,11 @@ function toggleNoteFullscreen(){
 }
 window.toggleNoteFullscreen = toggleNoteFullscreen;
 
-/* ---- Foto/PDF-Anhänge: völlig getrennt vom editierbaren Textfeld,
-   damit iOS Tipps auf Buttons nicht als Cursor-Platzierung fehlinterpretiert ---- */
+/* ---- Foto/PDF/Dokument-Anhänge: getrennt vom editierbaren Textfeld,
+   damit iOS Tipps auf Buttons nicht als Cursor-Platzierung fehlinterpretiert.
+   Getrennte Arrays für Vorderseite und Rückseite (nur bei "Ausführlich"-Sets beide genutzt). ---- */
 let workingAttachments = [];
+let workingAttachmentsBack = [];
 
 function fileEmoji(name){
   const ext = (name||'').split('.').pop().toLowerCase();
@@ -2549,28 +2638,29 @@ function fileEmoji(name){
   return '📎';
 }
 
-function renderNoteAttachments(){
-  const container = document.getElementById('noteAttachmentsList');
-  container.innerHTML = workingAttachments.map(att=>{
+function renderNoteAttachments(side){
+  const isBack = side === 'back';
+  const list = isBack ? workingAttachmentsBack : workingAttachments;
+  const container = document.getElementById(isBack ? 'noteAttachmentsListBack' : 'noteAttachmentsList');
+  container.innerHTML = list.map(att=>{
     if(att.type === 'image'){
       return `<div class="note-attach-item">
         <img src="${att.url}" onclick="window.open('${att.url}','_blank','noopener')">
         <div class="note-attach-item-controls">
-          <button type="button" class="note-embed-btn danger" onclick="removeAttachment('${att.id}')">🗑 Löschen</button>
+          <button type="button" class="note-embed-btn danger" onclick="removeAttachment('${att.id}',${isBack})">🗑 Löschen</button>
         </div>
       </div>`;
     }
     return `<div class="note-attach-item note-attach-item-pdf">
       <a href="${att.url}" target="_blank" rel="noopener" class="note-pdf-link">${fileEmoji(att.name)} ${escapeHtml(att.name||'Dokument')}</a>
-      <button type="button" class="note-embed-btn danger" onclick="removeAttachment('${att.id}')">🗑 Löschen</button>
+      <button type="button" class="note-embed-btn danger" onclick="removeAttachment('${att.id}',${isBack})">🗑 Löschen</button>
     </div>`;
   }).join('');
 }
 
-
-function removeAttachment(id){
-  workingAttachments = workingAttachments.filter(a=>a.id!==id);
-  renderNoteAttachments();
+function removeAttachment(id, isBack){
+  if(isBack){ workingAttachmentsBack = workingAttachmentsBack.filter(a=>a.id!==id); renderNoteAttachments('back'); }
+  else { workingAttachments = workingAttachments.filter(a=>a.id!==id); renderNoteAttachments('front'); }
 }
 window.removeAttachment = removeAttachment;
 
@@ -2603,19 +2693,20 @@ async function uploadNoteFile(blob, ext){
   return stGetDownloadURL(r);
 }
 
-async function handleNotePhotoSelect(event){
+async function handleNotePhotoSelect(event, isBack){
   const file = event.target.files[0];
   event.target.value = '';
   if(!file) return;
   if(!storageReady){ showToast('Foto-Upload nicht verfügbar (kein Netzwerk?)'); return; }
-  const statusEl = document.getElementById('noteAttachStatus');
+  const statusEl = document.getElementById(isBack ? 'noteAttachStatusBack' : 'noteAttachStatus');
   statusEl.textContent = 'Foto wird komprimiert…';
   try{
     const blob = await compressImageFile(file, 1600, 0.75);
     statusEl.textContent = 'Foto wird hochgeladen…';
     const url = await uploadNoteFile(blob, 'jpg');
-    workingAttachments.push({ id: uid(), type:'image', url, width: 60 });
-    renderNoteAttachments();
+    const item = { id: uid(), type:'image', url };
+    if(isBack) workingAttachmentsBack.push(item); else workingAttachments.push(item);
+    renderNoteAttachments(isBack ? 'back' : 'front');
     statusEl.textContent = '';
   }catch(e){
     console.error(e);
@@ -2625,18 +2716,19 @@ async function handleNotePhotoSelect(event){
 }
 window.handleNotePhotoSelect = handleNotePhotoSelect;
 
-async function handleNoteDocSelect(event){
+async function handleNoteDocSelect(event, isBack){
   const file = event.target.files[0];
   event.target.value = '';
   if(!file) return;
   if(!storageReady){ showToast('Dokument-Upload nicht verfügbar (kein Netzwerk?)'); return; }
-  const statusEl = document.getElementById('noteAttachStatus');
+  const statusEl = document.getElementById(isBack ? 'noteAttachStatusBack' : 'noteAttachStatus');
   statusEl.textContent = 'Dokument wird hochgeladen…';
   try{
     const ext = (file.name.split('.').pop() || 'dat').toLowerCase();
     const url = await uploadNoteFile(file, ext);
-    workingAttachments.push({ id: uid(), type:'doc', url, name: file.name || 'Dokument' });
-    renderNoteAttachments();
+    const item = { id: uid(), type:'doc', url, name: file.name || 'Dokument' };
+    if(isBack) workingAttachmentsBack.push(item); else workingAttachments.push(item);
+    renderNoteAttachments(isBack ? 'back' : 'front');
     statusEl.textContent = '';
   }catch(e){
     console.error(e);
@@ -2646,10 +2738,26 @@ async function handleNoteDocSelect(event){
 }
 window.handleNoteDocSelect = handleNoteDocSelect;
 
-function openNotePopupWithText(html, attachments){
+function openNotePopupSingle(html, attachments){
+  document.getElementById('noteFrontLabel').classList.add('hidden');
+  document.getElementById('noteBackSection').classList.add('hidden');
   document.getElementById('noteEditableField').innerHTML = html || '';
   workingAttachments = (attachments || []).map(a=>({...a}));
-  renderNoteAttachments();
+  renderNoteAttachments('front');
+  activeNoteField = 'noteEditableField';
+  document.getElementById('notePopup').classList.add('show');
+}
+
+function openNotePopupDual(frontHtml, frontAtt, backHtml, backAtt){
+  document.getElementById('noteFrontLabel').classList.remove('hidden');
+  document.getElementById('noteBackSection').classList.remove('hidden');
+  document.getElementById('noteEditableField').innerHTML = frontHtml || '';
+  document.getElementById('noteEditableFieldBack').innerHTML = backHtml || '';
+  workingAttachments = (frontAtt || []).map(a=>({...a}));
+  workingAttachmentsBack = (backAtt || []).map(a=>({...a}));
+  renderNoteAttachments('front');
+  renderNoteAttachments('back');
+  activeNoteField = 'noteEditableField';
   document.getElementById('notePopup').classList.add('show');
 }
 
@@ -2661,24 +2769,46 @@ function closeNotePopup(){
 window.closeNotePopup = closeNotePopup;
 
 function saveNotePopup(){
-  const html = document.getElementById('noteEditableField').innerHTML;
-  const finalHtml = isNoteEmpty(html) ? '' : html;
-  const attachments = workingAttachments;
+  const dual = !document.getElementById('noteBackSection').classList.contains('hidden');
+  const frontRaw = document.getElementById('noteEditableField').innerHTML;
+  const frontHtml = isNoteEmpty(frontRaw) ? '' : frontRaw;
+  const frontAtt = workingAttachments;
+  let backHtml = '', backAtt = [];
+  if(dual){
+    const backRaw = document.getElementById('noteEditableFieldBack').innerHTML;
+    backHtml = isNoteEmpty(backRaw) ? '' : backRaw;
+    backAtt = workingAttachmentsBack;
+  }
 
   if(noteEditorContext.mode === 'card'){
     const s = getSet(currentSetId);
     const card = s && s.cards.find(c=>c.id===noteEditorContext.cardId);
-    if(card){ card.note = finalHtml; card.attachments = attachments; persist(); renderCardList(); }
+    if(card){
+      if(dual){ card.noteFront = frontHtml; card.attachmentsFront = frontAtt; card.noteBack = backHtml; card.attachmentsBack = backAtt; }
+      else { card.note = frontHtml; card.attachments = frontAtt; }
+      persist(); renderCardList();
+    }
   } else if(noteEditorContext.mode === 'sessioncard'){
     const card = session.cards.find(c=>c.id===noteEditorContext.cardId);
-    if(card){ card.note = finalHtml; card.attachments = attachments; persist(); updateCardNoteBadgeDisplay(); }
+    if(card){
+      if(dual){ card.noteFront = frontHtml; card.attachmentsFront = frontAtt; card.noteBack = backHtml; card.attachmentsBack = backAtt; }
+      else { card.note = frontHtml; card.attachments = frontAtt; }
+      persist(); updateCardNoteBadgeDisplay(); updateCardNoteDisplay();
+    }
+  } else if(noteEditorContext.mode === 'sessioncard-side'){
+    const card = session.cards.find(c=>c.id===noteEditorContext.cardId);
+    if(card){
+      if(noteEditorContext.side === 'back'){ card.noteBack = frontHtml; card.attachmentsBack = frontAtt; }
+      else { card.noteFront = frontHtml; card.attachmentsFront = frontAtt; }
+      persist(); updateCardNoteBadgeDisplay(); updateCardNoteDisplay();
+    }
   } else if(noteEditorContext.mode === 'session'){
-    sessionNote = finalHtml;
-    sessionAttachments = attachments;
+    if(dual){ sessionNoteFront = frontHtml; sessionAttachmentsFront = frontAtt; sessionNoteBack = backHtml; sessionAttachmentsBack = backAtt; }
+    else { sessionNote = frontHtml; sessionAttachments = frontAtt; }
     updateSessionNoteBadge();
   } else {
-    currentNote = finalHtml;
-    currentAttachments = attachments;
+    if(dual){ currentNoteFront = frontHtml; currentAttachmentsFront = frontAtt; currentNoteBack = backHtml; currentAttachmentsBack = backAtt; }
+    else { currentNote = frontHtml; currentAttachments = frontAtt; }
     updateNoteBadges();
   }
   closeNotePopup();
@@ -2687,15 +2817,25 @@ window.saveNotePopup = saveNotePopup;
 
 /* ---- Formular oben (neues/bearbeitetes Wort) ---- */
 let currentAttachments = [];
+let currentNoteFront = '', currentNoteBack = '';
+let currentAttachmentsFront = [], currentAttachmentsBack = [];
 
 function updateNoteBadges(){
   const badge = document.getElementById('noteBadgeTarget');
-  if(badge) badge.classList.toggle('has-note', hasNoteContent(currentNote, currentAttachments));
+  if(!badge) return;
+  const s = getSet(currentSetId);
+  const dual = s && s.mode === 'ausfuehrlich';
+  const has = dual
+    ? (hasNoteContent(currentNoteFront, currentAttachmentsFront) || hasNoteContent(currentNoteBack, currentAttachmentsBack))
+    : hasNoteContent(currentNote, currentAttachments);
+  badge.classList.toggle('has-note', has);
 }
 
 function openFormNotesPopup(){
   noteEditorContext = { mode: 'form' };
-  openNotePopupWithText(currentNote, currentAttachments);
+  const s = getSet(currentSetId);
+  if(s && s.mode === 'ausfuehrlich') openNotePopupDual(currentNoteFront, currentAttachmentsFront, currentNoteBack, currentAttachmentsBack);
+  else openNotePopupSingle(currentNote, currentAttachments);
 }
 window.openFormNotesPopup = openFormNotesPopup;
 
@@ -2706,7 +2846,8 @@ function openCardNotesPopup(cardId){
   const card = s.cards.find(c=>c.id===cardId);
   if(!card) return;
   noteEditorContext = { mode: 'card', cardId };
-  openNotePopupWithText(card.note || '', card.attachments || []);
+  if(s.mode === 'ausfuehrlich') openNotePopupDual(card.noteFront||'', card.attachmentsFront||[], card.noteBack||'', card.attachmentsBack||[]);
+  else openNotePopupSingle(card.note || '', card.attachments || []);
 }
 window.openCardNotesPopup = openCardNotesPopup;
 
@@ -2722,6 +2863,10 @@ function editCard(cardId){
   document.getElementById('inputExampleTarget').value = card.exampleTarget || '';
   currentNote = card.note || '';
   currentAttachments = card.attachments || [];
+  currentNoteFront = card.noteFront || '';
+  currentNoteBack = card.noteBack || '';
+  currentAttachmentsFront = card.attachmentsFront || [];
+  currentAttachmentsBack = card.attachmentsBack || [];
   updateNoteBadges();
   document.getElementById('addOrUpdateBtn').textContent = 'Änderungen speichern';
   document.getElementById('cancelEditBtn').classList.remove('hidden');
@@ -2737,6 +2882,10 @@ function cancelEditCard(){
   document.getElementById('inputExampleTarget').value = '';
   currentNote = '';
   currentAttachments = [];
+  currentNoteFront = '';
+  currentNoteBack = '';
+  currentAttachmentsFront = [];
+  currentAttachmentsBack = [];
   updateNoteBadges();
   document.getElementById('addOrUpdateBtn').textContent = 'Wort hinzufügen';
   document.getElementById('cancelEditBtn').classList.add('hidden');
@@ -2750,24 +2899,44 @@ function addCard(){
   const tgt = document.getElementById('inputTarget').value.trim();
   const exSrc = document.getElementById('inputExampleSource').value.trim();
   const exTgt = document.getElementById('inputExampleTarget').value.trim();
-  if(!src || !tgt){ showToast("Bitte beide Wörter erfassen"); return; }
+  const ausfuehrlich = s.mode === 'ausfuehrlich';
+
+  if(ausfuehrlich){
+    const frontOk = src || exSrc || !isNoteEmpty(currentNoteFront) || currentAttachmentsFront.length>0;
+    const backOk = tgt || exTgt || !isNoteEmpty(currentNoteBack) || currentAttachmentsBack.length>0;
+    if(!frontOk || !backOk){ showToast("Bitte pro Seite mindestens ein Feld ausfüllen"); return; }
+  } else {
+    if(!src || !tgt){ showToast("Bitte beide Wörter erfassen"); return; }
+  }
 
   if(editingCardId){
     const card = s.cards.find(c=>c.id===editingCardId);
     if(card){
       card.source = src; card.target = tgt; card.exampleSource = exSrc; card.exampleTarget = exTgt;
-      card.note = currentNote; card.attachments = currentAttachments;
+      if(ausfuehrlich){
+        card.noteFront = currentNoteFront; card.attachmentsFront = currentAttachmentsFront;
+        card.noteBack = currentNoteBack; card.attachmentsBack = currentAttachmentsBack;
+      } else {
+        card.note = currentNote; card.attachments = currentAttachments;
+      }
     }
     cancelEditCard();
   } else {
-    s.cards.push({ id: uid(), source: src, target: tgt, difficulty: 'neu', exampleSource: exSrc, exampleTarget: exTgt,
-      note: currentNote, attachments: currentAttachments });
+    const newCard = { id: uid(), source: src, target: tgt, difficulty: 'neu', exampleSource: exSrc, exampleTarget: exTgt };
+    if(ausfuehrlich){
+      newCard.noteFront = currentNoteFront; newCard.attachmentsFront = currentAttachmentsFront;
+      newCard.noteBack = currentNoteBack; newCard.attachmentsBack = currentAttachmentsBack;
+    } else {
+      newCard.note = currentNote; newCard.attachments = currentAttachments;
+    }
+    s.cards.push(newCard);
     document.getElementById('inputSource').value = "";
     document.getElementById('inputTarget').value = "";
     document.getElementById('inputExampleSource').value = "";
     document.getElementById('inputExampleTarget').value = "";
-    currentNote = '';
-    currentAttachments = [];
+    currentNote = ''; currentAttachments = [];
+    currentNoteFront = ''; currentNoteBack = '';
+    currentAttachmentsFront = []; currentAttachmentsBack = [];
     updateNoteBadges();
   }
   persist();
@@ -3102,7 +3271,10 @@ function renderLearnSetup(){
   if(mcDisabled && currentMode==='mc') currentMode = 'fwd';
 
   const src = s ? LANGS[s.source] : null, tgt = s ? LANGS[s.target] : null;
-  const modes = [
+  const ausfuehrlich = s && s.mode === 'ausfuehrlich';
+  const modes = ausfuehrlich ? [
+    { key:'fwd', label:'Karteikarten', flags: s? `${src.flag} → ${tgt.flag}` : '', disabled: n===0 },
+  ] : [
     { key:'fwd', label:'Karteikarten', flags: s? `${src.flag} → ${tgt.flag}` : '', disabled: n===0 },
     { key:'bwd', label:'Karteikarten', flags: s? `${tgt.flag} → ${src.flag}` : '', disabled: n===0 },
     { key:'rf', label:'Richtig/Falsch', flags: s? `${src.flag} → ${tgt.flag}` : '', disabled: n===0 },
@@ -3349,6 +3521,39 @@ function exitSession(){
 window.exitSession = exitSession;
 
 /* ---- Karteikarten mode ---- */
+function updateCardNoteDisplay(){
+  const wordEl = document.getElementById('cardWord');
+  const noteEl = document.getElementById('cardNoteDisplay');
+  const card = session.cards[session.index];
+  if(!card || session.set.mode !== 'ausfuehrlich'){
+    wordEl.classList.remove('word-plain');
+    noteEl.classList.add('hidden');
+    noteEl.innerHTML = '';
+    return;
+  }
+  const isBack = session.flipped;
+  const noteHtml = isBack ? (card.noteBack||'') : (card.noteFront||'');
+  const atts = isBack ? (card.attachmentsBack||[]) : (card.attachmentsFront||[]);
+  const wordText = isBack ? session._backWord : session._frontWord;
+
+  wordEl.classList.toggle('word-plain', !wordText && hasNoteContent(noteHtml, atts));
+
+  if(hasNoteContent(noteHtml, atts)){
+    noteEl.classList.remove('hidden');
+    let html = isNoteEmpty(noteHtml) ? '' : noteHtml;
+    if(atts.length){
+      html += `<div class="note-attachments">` + atts.map(att=>{
+        if(att.type==='image') return `<div class="note-attach-item"><img src="${att.url}" onclick="event.stopPropagation();window.open('${att.url}','_blank','noopener')"></div>`;
+        return `<div class="note-attach-item note-attach-item-pdf"><a href="${att.url}" target="_blank" rel="noopener" class="note-pdf-link" onclick="event.stopPropagation();">${fileEmoji(att.name)} ${escapeHtml(att.name||'Dokument')}</a></div>`;
+      }).join('') + `</div>`;
+    }
+    noteEl.innerHTML = html;
+  } else {
+    noteEl.classList.add('hidden');
+    noteEl.innerHTML = '';
+  }
+}
+
 function renderSessionCard(){
   document.getElementById('cardEditOverlay').classList.remove('show');
   const { cards, index, mode, set } = session;
@@ -3383,6 +3588,7 @@ function renderSessionCard(){
   document.getElementById('flashcard').classList.remove('flipped');
   updateCardExampleDisplay(session._frontExample);
   updateCardNoteBadgeDisplay();
+  updateCardNoteDisplay();
   document.getElementById('diffRow').style.visibility = 'hidden';
   document.getElementById('rfFalseBtn').classList.add('hidden');
   document.getElementById('rfTrueBtn').classList.add('hidden');
@@ -3408,6 +3614,7 @@ function flipCard(){
   document.getElementById('flashcard').classList.add('flipped');
   updateCardExampleDisplay(session._backExample);
   updateCardNoteBadgeDisplay();
+  updateCardNoteDisplay();
   if(session.mode==='rf'){
     document.getElementById('rfFalseBtn').classList.remove('hidden');
     document.getElementById('rfTrueBtn').classList.remove('hidden');
@@ -3422,14 +3629,27 @@ function updateCardNoteBadgeDisplay(){
   const badge = document.getElementById('cardNoteBadge');
   if(!badge) return;
   const card = session.cards[session.index];
-  badge.classList.toggle('has-note', !!(card && hasNoteContent(card.note, card.attachments)));
+  if(!card){ badge.classList.toggle('has-note', false); return; }
+  let has;
+  if(session.set.mode === 'ausfuehrlich'){
+    has = session.flipped ? hasNoteContent(card.noteBack, card.attachmentsBack) : hasNoteContent(card.noteFront, card.attachmentsFront);
+  } else {
+    has = hasNoteContent(card.note, card.attachments);
+  }
+  badge.classList.toggle('has-note', has);
 }
 
 function viewCurrentCardNote(){
   const card = session.cards[session.index];
   if(!card) return;
-  noteEditorContext = { mode: 'sessioncard', cardId: card.id };
-  openNotePopupWithText(card.note || '', card.attachments || []);
+  if(session.set.mode === 'ausfuehrlich'){
+    const side = session.flipped ? 'back' : 'front';
+    noteEditorContext = { mode: 'sessioncard-side', cardId: card.id, side };
+    openNotePopupSingle(side==='back' ? (card.noteBack||'') : (card.noteFront||''), side==='back' ? (card.attachmentsBack||[]) : (card.attachmentsFront||[]));
+  } else {
+    noteEditorContext = { mode: 'sessioncard', cardId: card.id };
+    openNotePopupSingle(card.note || '', card.attachments || []);
+  }
 }
 window.viewCurrentCardNote = viewCurrentCardNote;
 
@@ -3540,15 +3760,23 @@ window.prevCard = prevCard;
 
 let sessionNote = '';
 let sessionAttachments = [];
+let sessionNoteFront = '', sessionNoteBack = '';
+let sessionAttachmentsFront = [], sessionAttachmentsBack = [];
 
 function updateSessionNoteBadge(){
   const badge = document.getElementById('sessionNoteBadge');
-  if(badge) badge.classList.toggle('has-note', hasNoteContent(sessionNote, sessionAttachments));
+  if(!badge) return;
+  const dual = session.set && session.set.mode === 'ausfuehrlich';
+  const has = dual
+    ? (hasNoteContent(sessionNoteFront, sessionAttachmentsFront) || hasNoteContent(sessionNoteBack, sessionAttachmentsBack))
+    : hasNoteContent(sessionNote, sessionAttachments);
+  badge.classList.toggle('has-note', has);
 }
 
 function openSessionNoteEditor(){
   noteEditorContext = { mode: 'session' };
-  openNotePopupWithText(sessionNote, sessionAttachments);
+  if(session.set && session.set.mode === 'ausfuehrlich') openNotePopupDual(sessionNoteFront, sessionAttachmentsFront, sessionNoteBack, sessionAttachmentsBack);
+  else openNotePopupSingle(sessionNote, sessionAttachments);
 }
 window.openSessionNoteEditor = openSessionNoteEditor;
 
@@ -3566,6 +3794,10 @@ function openCardEditor(){
   document.getElementById('cardEditExampleTarget').value = card.exampleTarget || '';
   sessionNote = card.note || '';
   sessionAttachments = card.attachments || [];
+  sessionNoteFront = card.noteFront || '';
+  sessionNoteBack = card.noteBack || '';
+  sessionAttachmentsFront = card.attachmentsFront || [];
+  sessionAttachmentsBack = card.attachmentsBack || [];
   updateSessionNoteBadge();
   document.getElementById('cardEditOverlay').classList.add('show');
 }
@@ -3583,13 +3815,24 @@ function saveCardEditFromSession(){
   const tgt = document.getElementById('cardEditTarget').value.trim();
   const exSrc = document.getElementById('cardEditExampleSource').value.trim();
   const exTgt = document.getElementById('cardEditExampleTarget').value.trim();
-  if(!src || !tgt){ showToast("Bitte beide Wörter ausfüllen"); return; }
+  const ausfuehrlich = session.set && session.set.mode === 'ausfuehrlich';
+  if(ausfuehrlich){
+    const frontOk = src || exSrc || !isNoteEmpty(sessionNoteFront) || sessionAttachmentsFront.length>0;
+    const backOk = tgt || exTgt || !isNoteEmpty(sessionNoteBack) || sessionAttachmentsBack.length>0;
+    if(!frontOk || !backOk){ showToast("Bitte pro Seite mindestens ein Feld ausfüllen"); return; }
+  } else {
+    if(!src || !tgt){ showToast("Bitte beide Wörter ausfüllen"); return; }
+  }
   card.source = src;
   card.target = tgt;
   card.exampleSource = exSrc;
   card.exampleTarget = exTgt;
-  card.note = sessionNote;
-  card.attachments = sessionAttachments;
+  if(ausfuehrlich){
+    card.noteFront = sessionNoteFront; card.attachmentsFront = sessionAttachmentsFront;
+    card.noteBack = sessionNoteBack; card.attachmentsBack = sessionAttachmentsBack;
+  } else {
+    card.note = sessionNote; card.attachments = sessionAttachments;
+  }
   persist();
   closeCardEditor();
   renderSessionCard();
