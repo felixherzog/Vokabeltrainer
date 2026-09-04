@@ -1209,7 +1209,7 @@ const firebaseConfig = {
   appId: "1:450361458804:web:0b6c42fada095e8ac29121"
 };
 
-let fbApp, db, docRef;
+let fbApp, db, docRef, fbAuth;
 let firebaseReady = false;
 let storageReady = false;
 let fbStorage;
@@ -1221,8 +1221,18 @@ let unsubscribeProfile = null;
 async function loadFirebase(){
   try{
     const appMod = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
+    const authMod = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
     const fsMod = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
     fbApp = appMod.initializeApp(firebaseConfig);
+
+    /* Anonyme Anmeldung: unsichtbar für den Nutzer, aber nötig,
+       damit die Sicherheitsregeln (request.auth != null) greifen.
+       Muss vor jedem Firestore-Zugriff abgeschlossen sein. */
+    fbAuth = authMod.getAuth(fbApp);
+    if(!fbAuth.currentUser){
+      await authMod.signInAnonymously(fbAuth);
+    }
+
     db = fsMod.getFirestore(fbApp);
     fsSetDoc = fsMod.setDoc;
     fsOnSnapshot = fsMod.onSnapshot;
@@ -1233,7 +1243,10 @@ async function loadFirebase(){
     fsUpdateDoc = fsMod.updateDoc;
     firebaseReady = true;
   }catch(e){
-    console.error("Firebase konnte nicht geladen werden (kein Netzwerk oder blockiert):", e);
+    console.error("Firebase konnte nicht geladen werden (kein Netzwerk, blockiert oder Anmeldung fehlgeschlagen):", e);
+    if(e && typeof e.code === 'string' && e.code.indexOf('auth/') === 0){
+      try{ showToast('Anmeldung bei Firebase fehlgeschlagen – nur lokale Daten'); }catch(_){}
+    }
     firebaseReady = false;
   }
   try{
