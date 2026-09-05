@@ -529,7 +529,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 30.08.2026 21:05 (Frage/Antwort auch im Wort-korrigieren-Overlay)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 05.09.2026 00:00 (Karteikarte: zurückblättern)</div>
   </div>
 
   <!-- HOME -->
@@ -561,7 +561,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 30.08.2026 21:05 (Frage/Antwort auch im Wort-korrigieren-Overlay)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 05.09.2026 00:00 (Karteikarte: zurückblättern)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
@@ -3682,7 +3682,7 @@ function renderSessionCard(){
 }
 
 function flipCard(){
-  if(session.flipped) return;
+  if(session.flipped){ flipCardToFront(); return; }
   session.flipped = true;
   document.getElementById('cardFlag').textContent = LANGS[session._backLangKey].flag;
   document.getElementById('cardWord').textContent = session._backWord;
@@ -3700,6 +3700,22 @@ function flipCard(){
     document.getElementById('diffRow').style.visibility = 'visible';
     document.getElementById('diffHint').textContent = "Wie gut kanntest du dieses Wort?";
   }
+}
+
+function flipCardToFront(){
+  session.flipped = false;
+  document.getElementById('cardFlag').textContent = LANGS[session._frontLangKey].flag;
+  document.getElementById('cardWord').textContent = session._frontWord;
+  document.getElementById('cardSub').textContent = "";
+  document.getElementById('tapInfo').textContent = "Tippen, um Lösung zu zeigen";
+  document.getElementById('flashcard').classList.remove('flipped');
+  updateCardExampleDisplay(session._frontExample);
+  updateCardNoteBadgeDisplay();
+  updateCardNoteDisplay();
+  document.getElementById('diffRow').style.visibility = 'hidden';
+  document.getElementById('rfFalseBtn').classList.add('hidden');
+  document.getElementById('rfTrueBtn').classList.add('hidden');
+  document.getElementById('diffHint').textContent = '';
 }
 
 function updateCardNoteBadgeDisplay(){
