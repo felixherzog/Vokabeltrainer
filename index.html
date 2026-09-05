@@ -440,7 +440,9 @@
     border-radius:12px;padding:13px 14px;color:var(--text);font-size:14px;margin-bottom:10px;font-family:inherit;
     resize:vertical;}
   .csv-overlay-box textarea:focus{outline:none;border-color:var(--green);}
-  .notes-overlay-box{max-width:640px !important;}
+  .notes-overlay-box{max-width:640px !important;max-height:calc(100vh - 48px);max-height:calc(100dvh - 48px);
+    overflow-y:auto;}
+  #notePopup{align-items:flex-start;overflow-y:auto;padding-top:24px;padding-bottom:24px;}
 
   .note-toolbar{display:flex;align-items:center;gap:8px;padding:8px;background:var(--panel-2);
     border:1px solid var(--border);border-bottom:none;border-radius:12px 12px 0 0;}
@@ -486,8 +488,12 @@
   .notes-overlay-box.fullscreen{max-width:100vw !important;width:100vw;height:100vh;height:100dvh;
     border-radius:0;display:flex;flex-direction:column;}
   .notes-overlay-box.fullscreen .note-editable{flex:1;min-height:0;max-height:none;}
-  .modal-overlay:has(.notes-overlay-box.fullscreen){padding:0;align-items:stretch;justify-content:stretch;}
+  #notePopup:has(.notes-overlay-box.fullscreen){padding:0;align-items:stretch;justify-content:stretch;overflow-y:hidden;}
   .csv-overlay-box .hint-text{font-size:12px;color:var(--text-dim);margin-bottom:16px;line-height:1.5;}
+  .mode-info-block{background:var(--panel-2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:12px;}
+  .mode-info-title{font-size:15px;font-weight:800;color:var(--green);margin-bottom:4px;}
+  .mode-info-text{font-size:13px;color:var(--text);line-height:1.4;margin-bottom:6px;}
+  .mode-info-example{font-size:12px;color:var(--text-dim);font-style:italic;}
   .overlay-actions-row{display:flex;gap:10px;}
   .overlay-actions-row button{flex:1;padding:13px;border-radius:14px;font-size:15px;font-weight:700;
     border:1px solid var(--border);background:var(--panel-2);color:var(--text);cursor:pointer;}
@@ -529,7 +535,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 05.09.2026 00:00 (Karteikarte: zurückblättern)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 31.08.2026 11:10 (Doppelt abgesicherter Scroll im Bemerkungs-Popup)</div>
   </div>
 
   <!-- HOME -->
@@ -561,7 +567,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 05.09.2026 00:00 (Karteikarte: zurückblättern)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 31.08.2026 11:10 (Doppelt abgesicherter Scroll im Bemerkungs-Popup)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
@@ -594,11 +600,13 @@
       <input type="text" id="newSetName" placeholder="z. B. Reisen &amp; Alltag">
     </div>
     <div class="field">
-      <label>Modus</label>
+      <label style="display:flex;align-items:center;gap:6px;">Modus
+        <span class="note-badge" id="modeInfoBadge" onclick="openModeInfo()" style="width:18px;height:18px;font-size:11px;background:var(--blue);color:#fff;border:none;">i</span>
+      </label>
       <div class="pill-row" id="newSetModePills" style="padding:0;"></div>
       <div class="hint-text" id="newSetModeHint" style="margin-top:8px;"></div>
     </div>
-    <div id="newSetLangFields">
+    <div id="newSetLangFields" class="hidden">
       <div class="field">
         <label>Ausgangssprache (Vorderseite)</label>
         <div class="lang-grid" id="newSetSourceGrid"></div>
@@ -608,7 +616,7 @@
         <div class="lang-grid" id="newSetTargetGrid"></div>
       </div>
     </div>
-    <button class="btn-primary" onclick="createSet()">Lernset erstellen</button>
+    <button class="btn-primary" id="createSetBtn" onclick="createSet()">Lernset erstellen</button>
   </div>
 
   <!-- Lernset bearbeiten (Wörter) -->
@@ -966,6 +974,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.5 6 3.5 9s-1 6.5-3.5 9c-2.5-2.5-3.5-6-3.5-9s1-6.5 3.5-9Z"/></svg>
       Set Sprachen
     </div>
+    <div class="action-menu-item" onclick="closeSetActionsMenu(); openSetModeChange()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v4H4zM4 16h16v4H4zM4 10h10v4H4z"/></svg>
+      Set Modus
+    </div>
     <div class="action-menu-item" onclick="closeSetActionsMenu(); openCsvImport()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg>
       CSV aus Text einfügen
@@ -1012,6 +1024,39 @@
     <div class="overlay-actions-row">
       <button onclick="closeSetLanguages()">Abbrechen</button>
       <button class="primary" onclick="saveSetLanguages()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="setModeOverlay">
+  <div class="rename-overlay-box">
+    <h3>Modus ändern</h3>
+    <div class="field" style="margin-bottom:8px;">
+      <div class="pill-row" id="editSetModePills" style="padding:0;"></div>
+      <div class="hint-text" id="editSetModeHint" style="margin-top:8px;"></div>
+    </div>
+    <div class="overlay-actions-row">
+      <button onclick="closeSetModeChange()">Abbrechen</button>
+      <button class="primary" onclick="saveSetMode()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modeInfoOverlay">
+  <div class="rename-overlay-box">
+    <h3>Vokabeln oder Ausführlich?</h3>
+    <div class="mode-info-block">
+      <div class="mode-info-title">Vokabeln</div>
+      <div class="mode-info-text">Für Sprachen lernen – ein Wort, eine Übersetzung.</div>
+      <div class="mode-info-example">„Hund" → „el perro"</div>
+    </div>
+    <div class="mode-info-block">
+      <div class="mode-info-title">Ausführlich</div>
+      <div class="mode-info-text">Für Wissen/Fakten – eine Frage, eine ausführliche Antwort.</div>
+      <div class="mode-info-example">„Hauptstadt von Peru?" → „Lima" mit ausführlicher Erklärung</div>
+    </div>
+    <div class="overlay-actions-row">
+      <button class="primary" onclick="closeModeInfo()" style="width:100%;">Verstanden</button>
     </div>
   </div>
 </div>
@@ -1209,7 +1254,7 @@ const firebaseConfig = {
   appId: "1:450361458804:web:0b6c42fada095e8ac29121"
 };
 
-let fbApp, db, docRef, fbAuth;
+let fbApp, db, docRef;
 let firebaseReady = false;
 let storageReady = false;
 let fbStorage;
@@ -1221,18 +1266,8 @@ let unsubscribeProfile = null;
 async function loadFirebase(){
   try{
     const appMod = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
-    const authMod = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
     const fsMod = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
     fbApp = appMod.initializeApp(firebaseConfig);
-
-    /* Anonyme Anmeldung: unsichtbar für den Nutzer, aber nötig,
-       damit die Sicherheitsregeln (request.auth != null) greifen.
-       Muss vor jedem Firestore-Zugriff abgeschlossen sein. */
-    fbAuth = authMod.getAuth(fbApp);
-    if(!fbAuth.currentUser){
-      await authMod.signInAnonymously(fbAuth);
-    }
-
     db = fsMod.getFirestore(fbApp);
     fsSetDoc = fsMod.setDoc;
     fsOnSnapshot = fsMod.onSnapshot;
@@ -1243,10 +1278,7 @@ async function loadFirebase(){
     fsUpdateDoc = fsMod.updateDoc;
     firebaseReady = true;
   }catch(e){
-    console.error("Firebase konnte nicht geladen werden (kein Netzwerk, blockiert oder Anmeldung fehlgeschlagen):", e);
-    if(e && typeof e.code === 'string' && e.code.indexOf('auth/') === 0){
-      try{ showToast('Anmeldung bei Firebase fehlgeschlagen – nur lokale Daten'); }catch(_){}
-    }
+    console.error("Firebase konnte nicht geladen werden (kein Netzwerk oder blockiert):", e);
     firebaseReady = false;
   }
   try{
@@ -1591,9 +1623,9 @@ let countFilter = "alle"; // 'alle' | '5' | '10' | '15' | '20'
 let manualMode = false;
 // manualSelections lebt jetzt in appData.manualSelections (wird mitsynchronisiert)
 let manualFilterCategory = 'alle';
-let newSetSource = "DE";
-let newSetTarget = "ES";
-let newSetMode = "vokabeln";
+let newSetSource = null;
+let newSetTarget = null;
+let newSetMode = null;
 
 let session = { cards: [], index: 0, flipped: false, mode: null };
 let mcState = { pool: [], index: 0, correct: 0, wrong: 0, locked:false };
@@ -1978,8 +2010,8 @@ function escapeHtml(str){
 /* ============ NEW SET ============ */
 function openNewSet(){
   document.getElementById('newSetName').value = "";
-  newSetSource = "DE"; newSetTarget = "ES";
-  newSetMode = "vokabeln";
+  newSetSource = null; newSetTarget = null;
+  newSetMode = null;
   renderNewSetModePills();
   renderLangGrid('newSetSourceGrid', 'source');
   renderLangGrid('newSetTargetGrid', 'target');
@@ -1993,17 +2025,43 @@ function renderNewSetModePills(){
     <button class="pill ${newSetMode==='vokabeln'?'active':''}" onclick="selectNewSetMode('vokabeln')">Vokabeln</button>
     <button class="pill ${newSetMode==='ausfuehrlich'?'active':''}" onclick="selectNewSetMode('ausfuehrlich')">Ausführlich</button>
   `;
-  const ausfuehrlich = newSetMode === 'ausfuehrlich';
-  document.getElementById('newSetModeHint').textContent = ausfuehrlich
-    ? 'Zusätzlich je eine ausführliche, formatierbare Bemerkung pro Kartenseite (mit Foto/Dokument). Nur Karteikarten-Lernmodus.'
-    : 'Wort/Übersetzung, Beispielsätze, eine Bemerkung. Vier Lernmodi verfügbar.';
-  document.getElementById('newSetLangFields').classList.toggle('hidden', ausfuehrlich);
-  if(ausfuehrlich){ newSetSource = 'DE'; newSetTarget = 'DE'; }
+  const hintEl = document.getElementById('newSetModeHint');
+  if(newSetMode === null){
+    hintEl.textContent = 'Bitte zuerst einen Modus auswählen.';
+  } else if(newSetMode === 'ausfuehrlich'){
+    hintEl.textContent = 'Zusätzlich je eine ausführliche, formatierbare Bemerkung pro Kartenseite (mit Foto/Dokument). Nur Karteikarten-Lernmodus.';
+  } else {
+    hintEl.textContent = 'Wort/Übersetzung, Beispielsätze, eine Bemerkung. Vier Lernmodi verfügbar.';
+  }
+  document.getElementById('newSetLangFields').classList.toggle('hidden', newSetMode !== 'vokabeln');
+  updateCreateSetButtonState();
 }
+
+function updateCreateSetButtonState(){
+  const btn = document.getElementById('createSetBtn');
+  if(!btn) return;
+  let ready = !!newSetMode;
+  if(newSetMode === 'vokabeln') ready = ready && !!newSetSource && !!newSetTarget;
+  btn.disabled = !ready;
+}
+
+function openModeInfo(){
+  document.getElementById('modeInfoOverlay').classList.add('show');
+}
+window.openModeInfo = openModeInfo;
+
+function closeModeInfo(){
+  document.getElementById('modeInfoOverlay').classList.remove('show');
+}
+window.closeModeInfo = closeModeInfo;
 
 function selectNewSetMode(mode){
   newSetMode = mode;
+  if(mode === 'ausfuehrlich'){ newSetSource = 'DE'; newSetTarget = 'DE'; }
+  else { newSetSource = null; newSetTarget = null; }
   renderNewSetModePills();
+  renderLangGrid('newSetSourceGrid','source');
+  renderLangGrid('newSetTargetGrid','target');
 }
 window.selectNewSetMode = selectNewSetMode;
 
@@ -2020,6 +2078,7 @@ function pickLang(kind, key){
   if(kind==='source') newSetSource = key; else newSetTarget = key;
   renderLangGrid('newSetSourceGrid','source');
   renderLangGrid('newSetTargetGrid','target');
+  updateCreateSetButtonState();
 }
 window.pickLang = pickLang;
 
@@ -2079,9 +2138,83 @@ function saveSetLanguages(){
 }
 window.saveSetLanguages = saveSetLanguages;
 
+/* ---- Set-Modus nachträglich ändern ---- */
+let editSetModeValue = 'vokabeln';
+
+function openSetModeChange(){
+  const s = getSet(currentSetId);
+  if(!s) return;
+  editSetModeValue = s.mode || 'vokabeln';
+  renderEditSetModePills();
+  document.getElementById('setModeOverlay').classList.add('show');
+}
+window.openSetModeChange = openSetModeChange;
+
+function closeSetModeChange(){
+  document.getElementById('setModeOverlay').classList.remove('show');
+}
+window.closeSetModeChange = closeSetModeChange;
+
+function renderEditSetModePills(){
+  const box = document.getElementById('editSetModePills');
+  box.innerHTML = `
+    <button class="pill ${editSetModeValue==='vokabeln'?'active':''}" onclick="selectEditSetMode('vokabeln')">Vokabeln</button>
+    <button class="pill ${editSetModeValue==='ausfuehrlich'?'active':''}" onclick="selectEditSetMode('ausfuehrlich')">Ausführlich</button>
+  `;
+  document.getElementById('editSetModeHint').textContent = editSetModeValue==='vokabeln'
+    ? 'Wort/Übersetzung, Beispielsätze, eine Bemerkung. Vier Lernmodi verfügbar.'
+    : 'Zusätzlich je eine ausführliche Bemerkung pro Kartenseite. Nur Karteikarten-Lernmodus.';
+}
+
+function selectEditSetMode(mode){
+  editSetModeValue = mode;
+  renderEditSetModePills();
+}
+window.selectEditSetMode = selectEditSetMode;
+
+function saveSetMode(){
+  const s = getSet(currentSetId);
+  if(!s) return;
+  const oldMode = s.mode || 'vokabeln';
+  if(editSetModeValue === oldMode){ closeSetModeChange(); return; }
+
+  const applyChange = ()=>{
+    s.mode = editSetModeValue;
+    s.cards.forEach(c=>{
+      if(editSetModeValue === 'ausfuehrlich'){
+        // Bestehende einzelne Bemerkung auf die Vorderseite übernehmen, nichts geht verloren
+        if((c.note && c.note.trim()) || (c.attachments && c.attachments.length)){
+          c.noteFront = c.note || '';
+          c.attachmentsFront = c.attachments || [];
+        }
+        if(c.noteBack === undefined) c.noteBack = '';
+        if(!c.attachmentsBack) c.attachmentsBack = [];
+      } else {
+        // Vorder-/Rückseiten-Bemerkung zu einer einzelnen zusammenführen
+        const parts = [c.noteFront, c.noteBack].filter(n => n && n.trim());
+        if(parts.length){ c.note = parts.join('<br><br>'); }
+        c.attachments = [...(c.attachmentsFront||[]), ...(c.attachmentsBack||[])];
+      }
+    });
+    persist();
+    closeSetModeChange();
+    updateDetailLangLabels(s);
+    renderCardList();
+    showToast("Modus geändert");
+  };
+
+  const msg = editSetModeValue === 'ausfuehrlich'
+    ? `Wechsel zu „Ausführlich": Bestehende Bemerkungen wandern auf die Vorderseite, nichts geht verloren. Beim Lernen steht danach nur noch „Karteikarten" zur Verfügung. Fortfahren?`
+    : `Wechsel zu „Vokabeln": Bemerkungen von Vorder- und Rückseite werden zu einer einzigen zusammengeführt. Karten ohne Wort und Übersetzung wirken dann evtl. unvollständig. Fortfahren?`;
+  showTwoChoice(msg, 'Fortfahren', 'Abbrechen', applyChange);
+}
+window.saveSetMode = saveSetMode;
+
 function createSet(){
   const name = document.getElementById('newSetName').value.trim();
   if(!name){ showToast("Bitte einen Namen eingeben"); return; }
+  if(!newSetMode){ showToast("Bitte zuerst einen Modus auswählen"); return; }
+  if(newSetMode === 'vokabeln' && (!newSetSource || !newSetTarget)){ showToast("Bitte beide Sprachen auswählen"); return; }
   if(newSetMode !== 'ausfuehrlich' && newSetSource === newSetTarget){
     showTwoChoice(`Ausgangs- und Zielsprache sind beide „${LANGS[newSetSource].name}". Trotzdem fortfahren?`,
       'Fortfahren', 'Abbrechen',
@@ -3682,7 +3815,7 @@ function renderSessionCard(){
 }
 
 function flipCard(){
-  if(session.flipped){ flipCardToFront(); return; }
+  if(session.flipped) return;
   session.flipped = true;
   document.getElementById('cardFlag').textContent = LANGS[session._backLangKey].flag;
   document.getElementById('cardWord').textContent = session._backWord;
@@ -3700,22 +3833,6 @@ function flipCard(){
     document.getElementById('diffRow').style.visibility = 'visible';
     document.getElementById('diffHint').textContent = "Wie gut kanntest du dieses Wort?";
   }
-}
-
-function flipCardToFront(){
-  session.flipped = false;
-  document.getElementById('cardFlag').textContent = LANGS[session._frontLangKey].flag;
-  document.getElementById('cardWord').textContent = session._frontWord;
-  document.getElementById('cardSub').textContent = "";
-  document.getElementById('tapInfo').textContent = "Tippen, um Lösung zu zeigen";
-  document.getElementById('flashcard').classList.remove('flipped');
-  updateCardExampleDisplay(session._frontExample);
-  updateCardNoteBadgeDisplay();
-  updateCardNoteDisplay();
-  document.getElementById('diffRow').style.visibility = 'hidden';
-  document.getElementById('rfFalseBtn').classList.add('hidden');
-  document.getElementById('rfTrueBtn').classList.add('hidden');
-  document.getElementById('diffHint').textContent = '';
 }
 
 function updateCardNoteBadgeDisplay(){
