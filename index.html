@@ -535,7 +535,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 10.09.2026 23:40 (Bewertung bereits auf Vorderseite möglich)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 10.09.2026 23:55 (Leicht→Einfach überall vereinheitlicht)</div>
   </div>
 
   <!-- HOME -->
@@ -567,7 +567,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 10.09.2026 23:40 (Bewertung bereits auf Vorderseite möglich)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 10.09.2026 23:55 (Leicht→Einfach überall vereinheitlicht)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
@@ -1604,6 +1604,11 @@ async function submitCreateProfile(){
   showToast(`Profil "${name}" erstellt`);
 }
 window.submitCreateProfile = submitCreateProfile;
+/* Interner Speicherwert "leicht" bleibt unverändert (keine Datenmigration nötig),
+   aber überall wo er angezeigt wird, soll "Einfach" stehen (wie auf den Bewertungs-Buttons). */
+const DIFF_LABELS = { neu: 'Neu', leicht: 'Einfach', mittel: 'Mittel', schwer: 'Schwer' };
+function diffLabel(key){ return DIFF_LABELS[key] || key; }
+
 const LANGS = {
   DE:{flag:"🇩🇪", name:"Deutsch", speech:"de-DE", mm:"de"},
   ES:{flag:"🇪🇸", name:"Spanisch", speech:"es-ES", mm:"es"},
@@ -2684,7 +2689,7 @@ function renderCardDifficultyFilter(){
     schwer: all.filter(c=>c.difficulty==='schwer').length,
   };
   const options = [
-    { v:'alle', l:'Alle' }, { v:'neu', l:'Neu' }, { v:'leicht', l:'Leicht' },
+    { v:'alle', l:'Alle' }, { v:'neu', l:'Neu' }, { v:'leicht', l:'Einfach' },
     { v:'mittel', l:'Mittel' }, { v:'schwer', l:'Schwer' }
   ];
   container.innerHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
@@ -2745,7 +2750,7 @@ function renderCardList(){
   }
   c.innerHTML = visible.slice().reverse().map(card=>{
     const diff = card.difficulty || 'neu';
-    const diffBadge = `<span class="diff-badge ${diff}" onclick="cycleDifficulty('${card.id}')">${diff}</span>`;
+    const diffBadge = `<span class="diff-badge ${diff}" onclick="cycleDifficulty('${card.id}')">${diffLabel(diff)}</span>`;
     const exSrc = card.exampleSource ? `<div class="w-example">${escapeHtml(card.exampleSource)}</div>` : '';
     const exTgt = card.exampleTarget ? `<div class="w-example">${escapeHtml(card.exampleTarget)}</div>` : '';
     const hasNote = s.mode === 'ausfuehrlich'
@@ -3453,7 +3458,7 @@ function renderLearnSetup(){
   };
   const catBox = document.getElementById('categoryPills');
   catBox.innerHTML = ['alle','neu','leicht','mittel','schwer'].map(cat=>{
-    const label = cat==='alle' ? 'Alle' : cat.charAt(0).toUpperCase()+cat.slice(1);
+    const label = cat==='alle' ? 'Alle' : diffLabel(cat);
     const active = currentCategory===cat ? `active pill-${cat}` : '';
     return `<button class="pill ${active}" onclick="selectCategory('${cat}')">${label} (${counts[cat]})</button>`;
   }).join('');
@@ -3526,7 +3531,7 @@ function renderFlashcardSetup(){
   };
   const catBox = document.getElementById('fcCategoryPills');
   catBox.innerHTML = ['alle','neu','leicht','mittel','schwer'].map(cat=>{
-    const label = cat==='alle' ? 'Alle' : cat.charAt(0).toUpperCase()+cat.slice(1);
+    const label = cat==='alle' ? 'Alle' : diffLabel(cat);
     const active = currentCategory===cat ? `active pill-${cat}` : '';
     return `<button class="pill ${active}" onclick="selectCategory('${cat}')">${label} (${counts[cat]})</button>`;
   }).join('');
@@ -3611,7 +3616,7 @@ function renderManualCategoryFilter(){
     schwer: all.filter(c=>c.difficulty==='schwer').length,
   };
   container.innerHTML = `<div class="pill-row" style="padding:0 0 18px;justify-content:flex-end;">${['alle','neu','leicht','mittel','schwer'].map(cat=>{
-    const label = cat==='alle' ? 'Alle' : cat.charAt(0).toUpperCase()+cat.slice(1);
+    const label = cat==='alle' ? 'Alle' : diffLabel(cat);
     const active = manualFilterCategory===cat ? `active pill-${cat}` : '';
     return `<button class="pill ${active}" onclick="selectManualCategoryFilter('${cat}')">${label} (${counts[cat]})</button>`;
   }).join('')}</div>`;
@@ -3895,7 +3900,7 @@ function updateCardDiffBadge(){
   const card = session.cards[session.index];
   if(!card){ badge.textContent = ''; return; }
   const diff = card.difficulty || 'neu';
-  badge.textContent = diff;
+  badge.textContent = diffLabel(diff);
   badge.className = `diff-badge ${diff}`;
   badge.style.position = 'absolute';
   badge.style.top = '16px';
