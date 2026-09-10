@@ -535,7 +535,7 @@
     </div>
     <div id="profileListContainer"></div>
     <button class="btn-secondary" style="margin-top:8px;" onclick="openCreateProfile()">+ Neues Profil</button>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 31.08.2026 11:10 (Doppelt abgesicherter Scroll im Bemerkungs-Popup)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:24px;">Build: 10.09.2026 23:40 (Bewertung bereits auf Vorderseite möglich)</div>
   </div>
 
   <!-- HOME -->
@@ -567,7 +567,7 @@
       <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <div class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncText">Nicht verbunden</span></div>
-    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 31.08.2026 11:10 (Doppelt abgesicherter Scroll im Bemerkungs-Popup)</div>
+    <div style="text-align:center;font-size:10px;color:var(--text-dim);opacity:.5;margin-top:14px;">Build: 10.09.2026 23:40 (Bewertung bereits auf Vorderseite möglich)</div>
   </div>
 
   <!-- BEARBEITEN: Lernset-Liste -->
@@ -2991,13 +2991,6 @@ function saveNotePopup(){
       else { card.note = frontHtml; card.attachments = frontAtt; }
       persist(); updateCardNoteBadgeDisplay(); updateCardNoteDisplay();
     }
-  } else if(noteEditorContext.mode === 'sessioncard-side'){
-    const card = session.cards.find(c=>c.id===noteEditorContext.cardId);
-    if(card){
-      if(noteEditorContext.side === 'back'){ card.noteBack = frontHtml; card.attachmentsBack = frontAtt; }
-      else { card.noteFront = frontHtml; card.attachmentsFront = frontAtt; }
-      persist(); updateCardNoteBadgeDisplay(); updateCardNoteDisplay();
-    }
   } else if(noteEditorContext.mode === 'session'){
     if(dual){ sessionNoteFront = frontHtml; sessionAttachmentsFront = frontAtt; sessionNoteBack = backHtml; sessionAttachmentsBack = backAtt; }
     else { sessionNote = frontHtml; sessionAttachments = frontAtt; }
@@ -3097,47 +3090,52 @@ function addCard(){
   const exTgt = document.getElementById('inputExampleTarget').value.trim();
   const ausfuehrlich = s.mode === 'ausfuehrlich';
 
-  if(ausfuehrlich){
-    const frontOk = src || exSrc || !isNoteEmpty(currentNoteFront) || currentAttachmentsFront.length>0;
-    const backOk = tgt || exTgt || !isNoteEmpty(currentNoteBack) || currentAttachmentsBack.length>0;
-    if(!frontOk || !backOk){ showToast("Bitte pro Seite mindestens ein Feld ausfüllen"); return; }
-  } else {
-    if(!src || !tgt){ showToast("Bitte beide Wörter erfassen"); return; }
-  }
+  const frontOk = !!(src || exSrc || (ausfuehrlich && (!isNoteEmpty(currentNoteFront) || currentAttachmentsFront.length>0)));
+  const backOk = !!(tgt || exTgt || (ausfuehrlich && (!isNoteEmpty(currentNoteBack) || currentAttachmentsBack.length>0)));
 
-  if(editingCardId){
-    const card = s.cards.find(c=>c.id===editingCardId);
-    if(card){
-      card.source = src; card.target = tgt; card.exampleSource = exSrc; card.exampleTarget = exTgt;
-      if(ausfuehrlich){
-        card.noteFront = currentNoteFront; card.attachmentsFront = currentAttachmentsFront;
-        card.noteBack = currentNoteBack; card.attachmentsBack = currentAttachmentsBack;
-      } else {
-        card.note = currentNote; card.attachments = currentAttachments;
+  if(!frontOk){ showToast(ausfuehrlich ? "Bitte mindestens ein Feld für die Frage ausfüllen" : "Bitte das erste Wort erfassen"); return; }
+
+  const doSave = () => {
+    if(editingCardId){
+      const card = s.cards.find(c=>c.id===editingCardId);
+      if(card){
+        card.source = src; card.target = tgt; card.exampleSource = exSrc; card.exampleTarget = exTgt;
+        if(ausfuehrlich){
+          card.noteFront = currentNoteFront; card.attachmentsFront = currentAttachmentsFront;
+          card.noteBack = currentNoteBack; card.attachmentsBack = currentAttachmentsBack;
+        } else {
+          card.note = currentNote; card.attachments = currentAttachments;
+        }
       }
-    }
-    cancelEditCard();
-  } else {
-    const newCard = { id: uid(), source: src, target: tgt, difficulty: 'neu', exampleSource: exSrc, exampleTarget: exTgt };
-    if(ausfuehrlich){
-      newCard.noteFront = currentNoteFront; newCard.attachmentsFront = currentAttachmentsFront;
-      newCard.noteBack = currentNoteBack; newCard.attachmentsBack = currentAttachmentsBack;
+      cancelEditCard();
     } else {
-      newCard.note = currentNote; newCard.attachments = currentAttachments;
+      const newCard = { id: uid(), source: src, target: tgt, difficulty: 'neu', exampleSource: exSrc, exampleTarget: exTgt };
+      if(ausfuehrlich){
+        newCard.noteFront = currentNoteFront; newCard.attachmentsFront = currentAttachmentsFront;
+        newCard.noteBack = currentNoteBack; newCard.attachmentsBack = currentAttachmentsBack;
+      } else {
+        newCard.note = currentNote; newCard.attachments = currentAttachments;
+      }
+      s.cards.push(newCard);
+      document.getElementById('inputSource').value = "";
+      document.getElementById('inputTarget').value = "";
+      document.getElementById('inputExampleSource').value = "";
+      document.getElementById('inputExampleTarget').value = "";
+      currentNote = ''; currentAttachments = [];
+      currentNoteFront = ''; currentNoteBack = '';
+      currentAttachmentsFront = []; currentAttachmentsBack = [];
+      updateNoteBadges();
     }
-    s.cards.push(newCard);
-    document.getElementById('inputSource').value = "";
-    document.getElementById('inputTarget').value = "";
-    document.getElementById('inputExampleSource').value = "";
-    document.getElementById('inputExampleTarget').value = "";
-    currentNote = ''; currentAttachments = [];
-    currentNoteFront = ''; currentNoteBack = '';
-    currentAttachmentsFront = []; currentAttachmentsBack = [];
-    updateNoteBadges();
+    persist();
+    renderCardList();
+    document.getElementById('inputSource').focus();
+  };
+
+  if(!backOk){
+    showTwoChoice("Die Antwort ist noch leer. Trotzdem speichern?", "Fortfahren", "Abbrechen", doSave);
+    return;
   }
-  persist();
-  renderCardList();
-  document.getElementById('inputSource').focus();
+  doSave();
 }
 window.addCard = addCard;
 
@@ -3799,10 +3797,15 @@ function renderSessionCard(){
   updateCardExampleDisplay(session._frontExample);
   updateCardNoteBadgeDisplay();
   updateCardNoteDisplay();
-  document.getElementById('diffRow').style.visibility = 'hidden';
   document.getElementById('rfFalseBtn').classList.add('hidden');
   document.getElementById('rfTrueBtn').classList.add('hidden');
-  document.getElementById('diffHint').textContent = '';
+  if(mode === 'rf'){
+    document.getElementById('diffRow').style.visibility = 'hidden';
+    document.getElementById('diffHint').textContent = '';
+  } else {
+    document.getElementById('diffRow').style.visibility = 'visible';
+    document.getElementById('diffHint').textContent = 'Wie gut kanntest du dieses Wort?';
+  }
 
   const isRf = mode==='rf';
   document.getElementById('prevBtn').classList.toggle('hidden', isRf);
@@ -3815,7 +3818,10 @@ function renderSessionCard(){
 }
 
 function flipCard(){
-  if(session.flipped) return;
+  if(session.flipped){
+    unflipCard();
+    return;
+  }
   session.flipped = true;
   document.getElementById('cardFlag').textContent = LANGS[session._backLangKey].flag;
   document.getElementById('cardWord').textContent = session._backWord;
@@ -3835,6 +3841,27 @@ function flipCard(){
   }
 }
 
+function unflipCard(){
+  session.flipped = false;
+  document.getElementById('cardFlag').textContent = LANGS[session._frontLangKey].flag;
+  document.getElementById('cardWord').textContent = session._frontWord;
+  document.getElementById('cardSub').textContent = "";
+  document.getElementById('tapInfo').textContent = "Tippen, um Lösung zu zeigen";
+  document.getElementById('flashcard').classList.remove('flipped');
+  updateCardExampleDisplay(session._frontExample);
+  updateCardNoteBadgeDisplay();
+  updateCardNoteDisplay();
+  document.getElementById('rfFalseBtn').classList.add('hidden');
+  document.getElementById('rfTrueBtn').classList.add('hidden');
+  if(session.mode === 'rf'){
+    document.getElementById('diffRow').style.visibility = 'hidden';
+    document.getElementById('diffHint').textContent = '';
+  } else {
+    document.getElementById('diffRow').style.visibility = 'visible';
+    document.getElementById('diffHint').textContent = 'Wie gut kanntest du dieses Wort?';
+  }
+}
+
 function updateCardNoteBadgeDisplay(){
   const badge = document.getElementById('cardNoteBadge');
   if(!badge) return;
@@ -3842,7 +3869,7 @@ function updateCardNoteBadgeDisplay(){
   if(!card){ badge.classList.toggle('has-note', false); return; }
   let has;
   if(session.set.mode === 'ausfuehrlich'){
-    has = session.flipped ? hasNoteContent(card.noteBack, card.attachmentsBack) : hasNoteContent(card.noteFront, card.attachmentsFront);
+    has = hasNoteContent(card.noteFront, card.attachmentsFront) || hasNoteContent(card.noteBack, card.attachmentsBack);
   } else {
     has = hasNoteContent(card.note, card.attachments);
   }
@@ -3853,9 +3880,8 @@ function viewCurrentCardNote(){
   const card = session.cards[session.index];
   if(!card) return;
   if(session.set.mode === 'ausfuehrlich'){
-    const side = session.flipped ? 'back' : 'front';
-    noteEditorContext = { mode: 'sessioncard-side', cardId: card.id, side };
-    openNotePopupSingle(side==='back' ? (card.noteBack||'') : (card.noteFront||''), side==='back' ? (card.attachmentsBack||[]) : (card.attachmentsFront||[]));
+    noteEditorContext = { mode: 'sessioncard', cardId: card.id };
+    openNotePopupDual(card.noteFront||'', card.attachmentsFront||[], card.noteBack||'', card.attachmentsBack||[]);
   } else {
     noteEditorContext = { mode: 'sessioncard', cardId: card.id };
     openNotePopupSingle(card.note || '', card.attachments || []);
@@ -4028,27 +4054,34 @@ function saveCardEditFromSession(){
   const exSrc = document.getElementById('cardEditExampleSource').value.trim();
   const exTgt = document.getElementById('cardEditExampleTarget').value.trim();
   const ausfuehrlich = session.set && session.set.mode === 'ausfuehrlich';
-  if(ausfuehrlich){
-    const frontOk = src || exSrc || !isNoteEmpty(sessionNoteFront) || sessionAttachmentsFront.length>0;
-    const backOk = tgt || exTgt || !isNoteEmpty(sessionNoteBack) || sessionAttachmentsBack.length>0;
-    if(!frontOk || !backOk){ showToast("Bitte pro Seite mindestens ein Feld ausfüllen"); return; }
-  } else {
-    if(!src || !tgt){ showToast("Bitte beide Wörter ausfüllen"); return; }
+
+  const frontOk = !!(src || exSrc || (ausfuehrlich && (!isNoteEmpty(sessionNoteFront) || sessionAttachmentsFront.length>0)));
+  const backOk = !!(tgt || exTgt || (ausfuehrlich && (!isNoteEmpty(sessionNoteBack) || sessionAttachmentsBack.length>0)));
+
+  if(!frontOk){ showToast(ausfuehrlich ? "Bitte mindestens ein Feld für die Frage ausfüllen" : "Bitte das erste Wort erfassen"); return; }
+
+  const doSave = () => {
+    card.source = src;
+    card.target = tgt;
+    card.exampleSource = exSrc;
+    card.exampleTarget = exTgt;
+    if(ausfuehrlich){
+      card.noteFront = sessionNoteFront; card.attachmentsFront = sessionAttachmentsFront;
+      card.noteBack = sessionNoteBack; card.attachmentsBack = sessionAttachmentsBack;
+    } else {
+      card.note = sessionNote; card.attachments = sessionAttachments;
+    }
+    persist();
+    closeCardEditor();
+    renderSessionCard();
+    showToast("Gespeichert");
+  };
+
+  if(!backOk){
+    showTwoChoice("Die Antwort ist noch leer. Trotzdem speichern?", "Fortfahren", "Abbrechen", doSave);
+    return;
   }
-  card.source = src;
-  card.target = tgt;
-  card.exampleSource = exSrc;
-  card.exampleTarget = exTgt;
-  if(ausfuehrlich){
-    card.noteFront = sessionNoteFront; card.attachmentsFront = sessionAttachmentsFront;
-    card.noteBack = sessionNoteBack; card.attachmentsBack = sessionAttachmentsBack;
-  } else {
-    card.note = sessionNote; card.attachments = sessionAttachments;
-  }
-  persist();
-  closeCardEditor();
-  renderSessionCard();
-  showToast("Gespeichert");
+  doSave();
 }
 window.saveCardEditFromSession = saveCardEditFromSession;
 
